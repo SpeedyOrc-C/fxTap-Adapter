@@ -2,12 +2,11 @@ module Osu.Parser where
 
 import Data.Bits
 import Data.Functor
-import Control.Monad
 import Control.Applicative ( Alternative(empty, some, many) )
 import Text.Parsec (noneOf, char, string, Parsec, letter, digit, (<|>), try)
+import Text.Parsec.Combinator (sepBy)
 
 import Osu
-import Text.Parsec.Combinator (sepBy)
 
 
 type Parser a = Parsec String () a
@@ -194,6 +193,17 @@ pHitObjects :: Parser [OsuHitObject]
 pHitObjects = do
     pSectionTitle "HitObjects"
     some (pHitObject <* pLineSeparator)
+
+pDifficulty :: Parser Difficulty
+pDifficulty = do
+    pSectionTitle "Difficulty"
+    Difficulty <$>
+            pKv "HPDrainRate" pDouble
+        <*> pKv "CircleSize" pDouble
+        <*> pKv "OverallDifficulty" pDouble
+        <*> pKv "ApproachRate" pDouble
+        <*> pKv "SliderMultiplier" pDouble
+        <*> pKv "SliderTickRate" pDouble
 
 pTag :: Parser String
 pTag = some $ noneOf " \t\r\n"

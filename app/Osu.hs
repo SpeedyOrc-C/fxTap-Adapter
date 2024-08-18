@@ -58,7 +58,14 @@ data Metadata = Metadata {
     beatmapSetId :: String
 } deriving Show
 
-data Difficulty = Difficulty
+data Difficulty = Difficulty {
+    hpDrainRate :: Double,
+    circleSize :: Double,
+    overallDifficulty :: Double,
+    approachRate :: Double,
+    sliderMultiplier :: Double,
+    sliderTickRate :: Double
+} deriving Show
 
 data Events = Events
 
