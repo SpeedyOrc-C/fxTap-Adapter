@@ -127,6 +127,16 @@ pGeneral = do
         <*> pKv' "WidescreenStoryboard" pBool False
         <*> pKv' "SamplesMatchPlaybackRate" pBool False
 
+pEditor :: Parser Editor
+pEditor = do
+    pSectionTitle "Editor"
+    Editor <$>
+            pKv' "Bookmarks" (pInteger `sepBy` char ',') []
+        <*> pKv "DistanceSpacing" pDouble
+        <*> pKv "BeatDivisor" pInteger
+        <*> pKv "GridSize" pInteger
+        <*> pKv "TimelineZoom" pDouble
+
 pType :: Parser Type
 pType = pInteger <&>
     \i -> Type
@@ -234,3 +244,8 @@ pMetadata = do
     return $ Metadata
         title titleUnicode artist artistUnicode creator
         version source tags beatmapId beatmapSetId
+
+pHeader :: Parser ()
+pHeader = do
+    void $ string "osu file format v14"
+    pLineSeparator

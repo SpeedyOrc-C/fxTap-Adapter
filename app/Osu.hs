@@ -30,7 +30,13 @@ data General = General {
     samplesMatchPlaybackRate :: Bool
 } deriving Show
 
-data Editor = Editor
+data Editor = Editor {
+    bookmarks :: [Integer],
+    distanceSpacing :: Double,
+    beatDivisor :: Integer,
+    gridSize :: Integer,
+    timelineZoom :: Double
+} deriving Show
 
 data Countdown =
     CountdownNo | CountdownNormal | CountdownHalf | CountdownDouble
