@@ -8,9 +8,9 @@ data Osu = Osu {
     difficulty :: Difficulty,
     events :: [Event],
     timingPoints :: [TimingPoint],
-    colours :: Colours,
+    colours :: Maybe Colours,
     hitObjects :: [OsuHitObject]
-}
+} deriving Show
 
 data General = General {
     audioFilename :: String,
@@ -114,9 +114,9 @@ data Colour = Colour Integer Integer Integer
 
 data Colours = Colours {
     combo :: Integer `M.Map` Colour,
-    sliderTrackOverride :: Colour,
-    sliderBorder :: Colour
-}
+    sliderTrackOverride :: Maybe Colour,
+    sliderBorder :: Maybe Colour
+} deriving Show
 
 data Type = Type {
     isHitCircle :: Bool,

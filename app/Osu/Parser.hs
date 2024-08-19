@@ -1,8 +1,9 @@
 module Osu.Parser where
 
+import Data.Map qualified as M
 import Data.Bits
 import Data.Functor
-import Control.Applicative ( Alternative(empty, some, many) )
+import Control.Applicative ( Alternative(empty, some, many), optional )
 import Text.Parsec (noneOf, char, string, Parsec, letter, digit, (<|>), try)
 import Text.Parsec.Combinator (sepBy)
 
@@ -308,12 +309,24 @@ pColour = Colour
     <*> pInteger <* char ','
     <*> pInteger
 
+pComboColour :: Parser (Integer, Colour)
+pComboColour = do
+    n <- string "Combo" *> pInteger
+    pWhite
+    void $ char ':'
+    pWhite
+    colour <- pColour
+    pLineSeparator
+
+    return (n, colour)
+
 pColours :: Parser Colours
-pColours = do
-    -- TODO: Combo colours
-    sliderTrackOverride <- pKv' "SliderTrackOverride" (Just <$> pColour) Nothing
-    sliderBorder <- pKv' "SliderBorder" (Just <$> pColour) Nothing
-    undefined
+pColours = pSectionTitle "Colours" *> (
+    Colours
+    <$> (M.fromList <$> some pComboColour)
+    <*> pKv' "SliderTrackOverride" (Just <$> pColour) Nothing
+    <*> pKv' "SliderBorder" (Just <$> pColour) Nothing
+    )
 
 pOsu :: Parser Osu
 pOsu = pHeader *> (
@@ -324,6 +337,6 @@ pOsu = pHeader *> (
     <*> pDifficulty
     <*> pEvents
     <*> pTimingPoints
-    <*> undefined
+    <*> (try (Just <$> pColours) <|> return Nothing)
     <*> pHitObjects
     )
