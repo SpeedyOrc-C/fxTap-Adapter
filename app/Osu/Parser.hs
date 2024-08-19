@@ -8,6 +8,8 @@ import Text.Parsec.Combinator (sepBy)
 
 import Osu
 
+b :: Integer -> Integer -> Bool
+b bitNumber number = number .&. (2^bitNumber) /= 0
 
 type Parser a = Parsec String () a
 
@@ -139,21 +141,11 @@ pEditor = do
 
 pType :: Parser Type
 pType = pInteger <&>
-    \i -> Type
-        (i .&. 1 /= 0)
-        (i .&. 2 /= 0)
-        (i .&. 4 /= 0)
-        (i .&. 8 /= 0)
-        (shift i (-3) .&. (1 + 2 + 4))
-        (i .&. 128 /= 0)
+    \i -> Type (b 0 i) (b 1 i) (b 2 i) (b 3 i)
+        (shift i (-3) .&. (1 + 2 + 4)) (b 7 i)
 
 pHitSound :: Parser HitSound
-pHitSound = pInteger <&>
-    \i -> HitSound
-        (i .&. 1 /= 0)
-        (i .&. 2 /= 0)
-        (i .&. 4 /= 0)
-        (i .&. 8 /= 0)
+pHitSound = pInteger <&> \i -> HitSound (b 0 i) (b 1 i) (b 2 i) (b 3 i)
 
 pMaybeSampleSet :: Parser (Maybe SampleSet)
 pMaybeSampleSet = do
@@ -245,7 +237,93 @@ pMetadata = do
         title titleUnicode artist artistUnicode creator
         version source tags beatmapId beatmapSetId
 
+pEffects :: Parser Effects
+pEffects = pInteger <&> \i -> Effects (b 0 i) (b 3 i)
+
+pSampleSetTimingPoint :: Parser (Maybe SampleSet)
+pSampleSetTimingPoint =
+        Nothing <$ char '0'
+    <|> Just SampleSetNormal <$ char '1'
+    <|> Just SampleSetSoft <$ char '2'
+    <|> Just SampleSetDrum <$ char '3'
+
+pTimingPoint :: Parser TimingPoint
+pTimingPoint = TimingPoint
+    <$> pInteger <* char ','
+    <*> pDouble <* char ','
+    <*> pInteger <* char ','
+    <*> pSampleSetTimingPoint <* char ','
+    <*> pInteger <* char ','
+    <*> pInteger <* char ','
+    <*> pBool <* char ','
+    <*> pEffects
+
+pTimingPoints :: Parser [TimingPoint]
+pTimingPoints = do
+    pSectionTitle "TimingPoints"
+    some $ pTimingPoint <* pLineSeparator
+
 pHeader :: Parser ()
 pHeader = do
     void $ string "osu file format v14"
     pLineSeparator
+
+pStringInList :: Parser String
+pStringInList = do
+    hasQuote <- True <$ char '\"' <|> return False
+    if hasQuote then
+        many (noneOf "\"\r\n") <* char '\"'
+    else do
+        many (noneOf ",\r\n")
+
+pEvent :: Parser Event
+pEvent = do
+    type' <- pInteger <* char ','
+    case type' of
+        0 -> string "0," *>
+            (Background
+            <$> pStringInList <* char ','
+            <*> pInteger <* char ','
+            <*> pInteger)
+        1 -> string "1," *>
+            (Video
+            <$> pInteger <* char ','
+            <*> pStringInList <* char ','
+            <*> pInteger <* char ','
+            <*> pInteger)
+        2 -> string "2," *>
+            (Break
+            <$> pInteger <* char ','
+            <*> pInteger)
+        _ -> error "Not implemented event type."
+
+pEvents :: Parser [Event]
+pEvents = do
+    pSectionTitle "Events"
+    some $ pEvent <* pLineSeparator
+
+pColour :: Parser Colour
+pColour = Colour
+    <$> pInteger <* char ','
+    <*> pInteger <* char ','
+    <*> pInteger
+
+pColours :: Parser Colours
+pColours = do
+    -- TODO: Combo colours
+    sliderTrackOverride <- pKv' "SliderTrackOverride" (Just <$> pColour) Nothing
+    sliderBorder <- pKv' "SliderBorder" (Just <$> pColour) Nothing
+    undefined
+
+pOsu :: Parser Osu
+pOsu = pHeader *> (
+    Osu
+    <$> pGeneral
+    <*> pEditor
+    <*> pMetadata
+    <*> pDifficulty
+    <*> pEvents
+    <*> pTimingPoints
+    <*> undefined
+    <*> pHitObjects
+    )

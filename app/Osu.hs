@@ -1,12 +1,13 @@
 module Osu where
+import qualified Data.Map as M
 
 data Osu = Osu {
     general :: General,
     editor :: Editor,
     metadata :: Metadata,
     difficulty :: Difficulty,
-    events :: Events,
-    timingPoints :: TimingPoints,
+    events :: [Event],
+    timingPoints :: [TimingPoint],
     colours :: Colours,
     hitObjects :: [OsuHitObject]
 }
@@ -16,7 +17,7 @@ data General = General {
     audioLeadIn :: Integer,
     previewTime :: Integer,
     countdown :: Countdown,
-    sampleSet :: SampleSet,
+    sampleSetGeneral :: SampleSet,
     stackLeniency :: Double,
     mode :: Mode,
     letterboxInBreaks :: Bool,
@@ -73,11 +74,49 @@ data Difficulty = Difficulty {
     sliderTickRate :: Double
 } deriving Show
 
-data Events = Events
+data Event
+    = Background {
+        fileNameEvent :: String,
+        xOffset :: Integer,
+        yOffset :: Integer
+    }
+    | Video {
+        startTimeEvent :: Integer,
+        fileNameVideo :: String,
+        xOffset :: Integer,
+        yOffset :: Integer
+    }
+    | Break {
+        startTimeEvent :: Integer,
+        endTimeEvent :: Integer
+    }
+    -- TODO: Storyboard
+    deriving Show
 
-data TimingPoints = TimingPoints
+data Effects = Effects {
+    kiaiTime :: Bool,
+    omitFirstBarline :: Bool
+} deriving Show
 
-data Colours = Colours
+data TimingPoint = TimingPoint {
+    startTime :: Integer,
+    beatLength :: Double,
+    meter :: Integer,
+    sampleSetTimingPoint :: Maybe SampleSet,
+    sampleIndex :: Integer,
+    volumeTimingPoint :: Integer,
+    uninherited :: Bool,
+    effects :: Effects
+} deriving Show
+
+data Colour = Colour Integer Integer Integer
+    deriving Show
+
+data Colours = Colours {
+    combo :: Integer `M.Map` Colour,
+    sliderTrackOverride :: Colour,
+    sliderBorder :: Colour
+}
 
 data Type = Type {
     isHitCircle :: Bool,
@@ -99,20 +138,20 @@ data HitSample = HitSample {
     normalSet :: Maybe SampleSet,
     additionSet :: Maybe SampleSet,
     index :: Integer,
-    volume :: Integer,
-    fileName :: String
+    volumeHitSample :: Integer,
+    fileNameHitSample :: String
 } deriving Show
 
 data OsuHitObject
     = HitObjectCircle {
         x :: Double, y :: Double,
-        time :: Integer,
+        timeHitObject :: Integer,
         hitSound :: HitSound,
         hitSample :: HitSample
     }
     | HitObjectHold {
         x :: Double, y :: Double,
-        time :: Integer,
+        timeHitObject :: Integer,
         hitSound :: HitSound,
         endTime :: Integer,
         hitSample :: HitSample
