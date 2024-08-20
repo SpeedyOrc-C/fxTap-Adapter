@@ -11,3 +11,19 @@ This is a osu! beatmap parser with a converter to the fxTap format.
 ```sh
 cabal build
 ```
+
+## Run
+
+### Syntax
+
+```sh
+cabal run . -- <beatmap-path>
+```
+
+### Example
+
+```sh
+cabal run . -- my-beatmap.osu
+```
+
+This will generate `my-beatmap.f4k`.
