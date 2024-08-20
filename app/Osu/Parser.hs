@@ -1,11 +1,11 @@
-module Osu.Parser where
+module Osu.Parser (pOsu) where
 
 import Data.Map qualified as M
-import Data.Bits
-import Data.Functor
-import Control.Applicative ( Alternative(empty, some, many), optional )
-import Text.Parsec (noneOf, char, string, Parsec, letter, digit, (<|>), try)
+import Data.Bits ( Bits((.&.), shift) )
+import Data.Functor ( (<&>), void )
+import Text.Parsec (noneOf, char, string, Parsec, digit, (<|>), try)
 import Text.Parsec.Combinator (sepBy)
+import Control.Applicative ( Alternative(empty, some, many) )
 
 import Osu
 
@@ -30,9 +30,6 @@ pLineSeparator = void $ do
     void $ many pWhite
     pLineBreak
     void $ many (pLineBreak <|> pWhite)
-
-pKey :: Parser String
-pKey = some $ letter <|> digit
 
 pString :: Parser String
 pString = many $ noneOf "\r\n\t"

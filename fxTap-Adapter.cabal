@@ -65,6 +65,7 @@ executable fxTap-Adapter
     other-modules:
           Osu
         , Osu.Parser
+        , Osu.Fx4K
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -73,6 +74,9 @@ executable fxTap-Adapter
     build-depends: base ^>=4.17.2.1
         , parsec
         , containers
+        , filepath
+        , bytestring
+        , binary
 
     -- Directories containing source files.
     hs-source-dirs:   app
