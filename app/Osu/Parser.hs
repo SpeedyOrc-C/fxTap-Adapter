@@ -109,8 +109,8 @@ pOverlayPosition =
 pGeneral :: Parser General
 pGeneral = do
     pSectionTitle "General"
-    General <$>
-            pKv "AudioFilename" pString
+    General
+        <$> pKv "AudioFilename" pString
         <*> pKv' "AudioLeadIn" pInteger 0
         <*> pKv' "PreviewTime" pInteger (-1)
         <*> pKv' "Countdown" pCountdown CountdownNormal
@@ -130,8 +130,8 @@ pGeneral = do
 pEditor :: Parser Editor
 pEditor = do
     pSectionTitle "Editor"
-    Editor <$>
-            pKv' "Bookmarks" (pInteger `sepBy` char ',') []
+    Editor
+        <$> pKv' "Bookmarks" (pInteger `sepBy` char ',') []
         <*> pKv "DistanceSpacing" pDouble
         <*> pKv "BeatDivisor" pInteger
         <*> pKv "GridSize" pInteger
@@ -166,14 +166,10 @@ pOptionalHitSample =
 
 pHitObject :: Parser OsuHitObject
 pHitObject = do
-    x <- pDouble
-    void $ char ','
-    y <- pDouble
-    void $ char ','
-    time <- pInteger
-    void $ char ','
-    type' <- pType
-    void $ char ','
+    x <- pDouble <* char ','
+    y <- pDouble <* char ','
+    time <- pInteger <* char ','
+    type' <- pType <* char ','
     hitSound <- pHitSound
 
     if isHitCircle type' then
@@ -197,8 +193,8 @@ pHitObjects = do
 pDifficulty :: Parser Difficulty
 pDifficulty = do
     pSectionTitle "Difficulty"
-    Difficulty <$>
-            pKv "HPDrainRate" pDouble
+    Difficulty
+        <$> pKv "HPDrainRate" pDouble
         <*> pKv "CircleSize" pDouble
         <*> pKv "OverallDifficulty" pDouble
         <*> pKv "ApproachRate" pDouble
@@ -211,26 +207,16 @@ pTag = some $ noneOf " \t\r\n"
 pMetadata :: Parser Metadata
 pMetadata = do
     pSectionTitle "Metadata"
-    title <- pString
-    pLineSeparator
-    titleUnicode <- pString
-    pLineSeparator
-    artist <- pString
-    pLineSeparator
-    artistUnicode <- pString
-    pLineSeparator
-    creator <- pString
-    pLineSeparator
-    version <- pString
-    pLineSeparator
-    source <- pString
-    pLineSeparator
-    tags <- pTag `sepBy` pWhite
-    pLineSeparator
-    beatmapId <- pString
-    pLineSeparator
-    beatmapSetId <- pString
-    pLineSeparator
+    title <- pString <* pLineSeparator
+    titleUnicode <- pString <* pLineSeparator
+    artist <- pString <* pLineSeparator
+    artistUnicode <- pString <* pLineSeparator
+    creator <- pString <* pLineSeparator
+    version <- pString <* pLineSeparator
+    source <- pString <* pLineSeparator
+    tags <- (pTag `sepBy` pWhite) <* pLineSeparator
+    beatmapId <- pString <* pLineSeparator
+    beatmapSetId <- pString <* pLineSeparator
     return $ Metadata
         title titleUnicode artist artistUnicode creator
         version source tags beatmapId beatmapSetId
@@ -318,22 +304,22 @@ pComboColour = do
     return (n, colour)
 
 pColours :: Parser Colours
-pColours = pSectionTitle "Colours" *> (
+pColours = do
+    pSectionTitle "Colours"
     Colours
-    <$> (M.fromList <$> some pComboColour)
-    <*> pKv' "SliderTrackOverride" (Just <$> pColour) Nothing
-    <*> pKv' "SliderBorder" (Just <$> pColour) Nothing
-    )
+        <$> (M.fromList <$> some pComboColour)
+        <*> pKv' "SliderTrackOverride" (Just <$> pColour) Nothing
+        <*> pKv' "SliderBorder" (Just <$> pColour) Nothing
 
 pOsu :: Parser Osu
-pOsu = pHeader *> (
+pOsu = do
+    pHeader
     Osu
-    <$> pGeneral
-    <*> pEditor
-    <*> pMetadata
-    <*> pDifficulty
-    <*> pEvents
-    <*> pTimingPoints
-    <*> (try (Just <$> pColours) <|> return Nothing)
-    <*> pHitObjects
-    )
+        <$> pGeneral
+        <*> pEditor
+        <*> pMetadata
+        <*> pDifficulty
+        <*> pEvents
+        <*> pTimingPoints
+        <*> (try (Just <$> pColours) <|> return Nothing)
+        <*> pHitObjects
