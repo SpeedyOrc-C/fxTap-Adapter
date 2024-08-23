@@ -6,7 +6,7 @@ import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Text.Parsec (parse)
 import Data.Binary.Put (runPut)
 import System.Exit (exitFailure, exitSuccess)
-import System.FilePath (takeBaseName)
+import System.FilePath (takeBaseName, takeDirectory)
 import System.Environment (getArgs)
 
 import Osu.Parser (pOsu)
@@ -36,7 +36,9 @@ main = do
                     exitFailure
 
                 Right beatmap -> do
-                    let outputPath = takeBaseName path ++ ".f4k"
+                    let outputPath =
+                            takeDirectory path ++ "/" ++
+                            takeBaseName path ++ ".f4k"
                     BL.writeFile outputPath (runPut $ wFx4K beatmap)
                     exitSuccess
 
