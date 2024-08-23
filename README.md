@@ -26,7 +26,7 @@ cabal run . -- <beatmap-path>
 cabal run . -- my-beatmap.osu
 ```
 
-This will generate `my-beatmap.f4k`.
+This will generate `my-beatmap.fxt`.
 
 ## Exceptions
 

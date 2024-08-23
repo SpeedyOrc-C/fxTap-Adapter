@@ -10,7 +10,7 @@ import System.FilePath (takeBaseName, takeDirectory)
 import System.Environment (getArgs)
 
 import Osu.Parser (pOsu)
-import Osu.Fx4K (wFx4K)
+import Osu.FxTap (wFxTap)
 
 debug parser = do
     t <- readFile "d.txt"
@@ -38,8 +38,8 @@ main = do
                 Right beatmap -> do
                     let outputPath =
                             takeDirectory path ++ "/" ++
-                            takeBaseName path ++ ".f4k"
-                    BL.writeFile outputPath (runPut $ wFx4K beatmap)
+                            takeBaseName path ++ ".fxt"
+                    BL.writeFile outputPath (runPut $ wFxTap beatmap)
                     exitSuccess
 
         _ -> do

@@ -215,19 +215,17 @@ pTags = pTag `sepBy` some pWhite
 pMetadata :: Parser Metadata
 pMetadata = do
     pSectionTitle "Metadata"
-    title <- pString <* pLineSeparator
-    titleUnicode <- pString <* pLineSeparator
-    artist <- pString <* pLineSeparator
-    artistUnicode <- pString <* pLineSeparator
-    creator <- pString <* pLineSeparator
-    version <- pString <* pLineSeparator
-    source <- pString <* pLineSeparator
-    tags <- pTags <* pLineSeparator
-    beatmapId <- pString <* pLineSeparator
-    beatmapSetId <- pString <* pLineSeparator
-    return $ Metadata
-        title titleUnicode artist artistUnicode creator
-        version source tags beatmapId beatmapSetId
+    Metadata
+        <$> pKv "Title" pString
+        <*> pKv "TitleUnicode" pString
+        <*> pKv "Artist" pString
+        <*> pKv "ArtistUnicode" pString
+        <*> pKv "Creator" pString
+        <*> pKv "Version" pString
+        <*> pKv "Source" pString
+        <*> pKv "Tags" pTags
+        <*> pKv "BeatmapID" pString
+        <*> pKv "BeatmapSetID" pString
 
 pEffects :: Parser Effects
 pEffects = pInteger <&> \i -> Effects (b 0 i) (b 3 i)
