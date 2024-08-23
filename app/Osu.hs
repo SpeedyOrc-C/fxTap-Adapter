@@ -97,7 +97,7 @@ data Effects = Effects {
 } deriving Show
 
 data TimingPoint = TimingPoint {
-    startTime :: Integer,
+    startTime :: Double,
     beatLength :: Double,
     meter :: Integer,
     sampleSetTimingPoint :: Maybe SampleSet,

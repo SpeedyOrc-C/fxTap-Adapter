@@ -241,7 +241,7 @@ pSampleSetTimingPoint =
 
 pTimingPoint :: Parser TimingPoint
 pTimingPoint = TimingPoint
-    <$> pInteger <* char ','
+    <$> pDouble <* char ','
     <*> pDouble <* char ','
     <*> pInteger <* char ','
     <*> pSampleSetTimingPoint <* char ','
