@@ -77,14 +77,12 @@ data Difficulty = Difficulty {
 data Event
     = Background {
         fileNameEvent :: String,
-        xOffset :: Integer,
-        yOffset :: Integer
+        offset :: (Integer, Integer)
     }
     | Video {
         startTimeEvent :: Integer,
         fileNameVideo :: String,
-        xOffset :: Integer,
-        yOffset :: Integer
+        offset :: (Integer, Integer)
     }
     | Break {
         startTimeEvent :: Integer,

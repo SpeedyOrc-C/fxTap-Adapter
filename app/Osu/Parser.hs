@@ -261,26 +261,37 @@ pStringInList = do
     else do
         many (noneOf ",\r\n")
 
+pOptionalOffset :: Parser (Integer, Integer)
+pOptionalOffset =
+    ((,) <$> (char ',' *> pInteger) <*> (char ',' *> pInteger))
+    <|> return (0, 0)
+
 pEvent :: Parser Event
-pEvent = do
+pEvent = pEventVideo <|> do
     type' <- pInteger <* char ','
     case type' of
         0 -> string "0," *>
             (Background
-            <$> pStringInList <* char ','
-            <*> pInteger <* char ','
-            <*> pInteger)
+            <$> pStringInList
+            <*> pOptionalOffset)
         1 -> string "1," *>
             (Video
             <$> pInteger <* char ','
-            <*> pStringInList <* char ','
-            <*> pInteger <* char ','
-            <*> pInteger)
+            <*> pStringInList
+            <*> pOptionalOffset)
         2 -> string "2," *>
             (Break
             <$> pInteger <* char ','
             <*> pInteger)
         _ -> error "Not implemented event type."
+
+pEventVideo :: Parser Event
+pEventVideo = do
+    void $ string "Video,"
+    Video
+        <$> pInteger <* char ','
+        <*> pStringInList
+        <*> pOptionalOffset
 
 pEvents :: Parser [Event]
 pEvents = do
