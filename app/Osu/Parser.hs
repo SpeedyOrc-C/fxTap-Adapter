@@ -161,9 +161,13 @@ pHitSample = HitSample
     <*> pInteger <* char ':'
     <*> pString
 
-pOptionalHitSample :: Parser HitSample
-pOptionalHitSample =
+pHitSampleOptionalHitCircle :: Parser HitSample
+pHitSampleOptionalHitCircle =
     (char ',' *> pHitSample) <|> return (HitSample Nothing Nothing 0 0 "")
+
+pHitSampleOptionalHold :: Parser HitSample
+pHitSampleOptionalHold =
+    (char ':' *> pHitSample) <|> return (HitSample Nothing Nothing 0 0 "")
 
 pHitObject :: Parser OsuHitObject
 pHitObject = do
@@ -175,13 +179,13 @@ pHitObject = do
 
     if isHitCircle type' then
         HitObjectCircle x y time hitSound
-            <$> pOptionalHitSample
+            <$> pHitSampleOptionalHitCircle
 
     else if isHold type' then do
         void $ char ','
         endTime <- pInteger
         HitObjectHold x y time hitSound endTime
-            <$> pOptionalHitSample
+            <$> pHitSampleOptionalHold
 
     else
         error "Unexpected hit object type."
