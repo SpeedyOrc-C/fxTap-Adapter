@@ -1,4 +1,4 @@
-module Osu.Parser (pOsu) where
+module Osu.Parser where
 
 import Data.Map qualified as M
 import Data.Bits ( Bits((.&.), shift) )
@@ -281,15 +281,15 @@ pEvent = pEventVideo <|> do
             (Background
             <$> pStringInList
             <*> pOptionalOffset)
-        1 -> string "1," *>
-            (Video
+        1 ->
+            Video
             <$> pInteger <* char ','
             <*> pStringInList
-            <*> pOptionalOffset)
-        2 -> string "2," *>
-            (Break
+            <*> pOptionalOffset
+        2 ->
+            Break
             <$> pInteger <* char ','
-            <*> pInteger)
+            <*> pInteger
         _ -> error "Not implemented event type."
 
 pEventVideo :: Parser Event
