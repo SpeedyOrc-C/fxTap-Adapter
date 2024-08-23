@@ -17,7 +17,7 @@ data General = General {
     audioLeadIn :: Integer,
     previewTime :: Integer,
     countdown :: Countdown,
-    sampleSetGeneral :: SampleSet,
+    sampleSetGeneral :: Maybe SampleSet,
     stackLeniency :: Double,
     mode :: Mode,
     letterboxInBreaks :: Bool,

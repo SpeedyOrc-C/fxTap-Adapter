@@ -84,11 +84,12 @@ pCountdown = do
         '3' -> return CountdownDouble
         _ -> empty
 
-pSampleSet :: Parser SampleSet
+pSampleSet :: Parser (Maybe SampleSet)
 pSampleSet = do
-        SampleSetNormal <$ string "Normal"
-    <|> SampleSetDrum <$ string "Drum"
-    <|> SampleSetSoft <$ string "Soft"
+        Nothing <$ try (string "None")
+    <|> Just SampleSetNormal <$ try (string "Normal")
+    <|> Just SampleSetDrum <$ string "Drum"
+    <|> Just SampleSetSoft <$ string "Soft"
 
 pMode :: Parser Mode
 pMode = do
@@ -114,7 +115,7 @@ pGeneral = do
         <*> pKv' "AudioLeadIn" pInteger 0
         <*> pKv' "PreviewTime" pInteger (-1)
         <*> pKv' "Countdown" pCountdown CountdownNormal
-        <*> pKv' "SampleSet" pSampleSet SampleSetNormal
+        <*> pKv' "SampleSet" pSampleSet (Just SampleSetNormal)
         <*> pKv' "StackLeniency" pDouble 0.7
         <*> pKv' "Mode" pMode ModeOsu
         <*> pKv' "LetterboxInBreaks" pBool False
