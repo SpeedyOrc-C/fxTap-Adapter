@@ -3,7 +3,7 @@ module Osu.Parser (pOsu) where
 import Data.Map qualified as M
 import Data.Bits ( Bits((.&.), shift) )
 import Data.Functor ( (<&>), void )
-import Text.Parsec (noneOf, char, string, Parsec, digit, (<|>), try)
+import Text.Parsec (noneOf, char, string, Parsec, digit, (<|>), try, eof)
 import Text.Parsec.Combinator (sepBy)
 import Control.Applicative ( Alternative(empty, some, many) )
 
@@ -335,3 +335,4 @@ pOsu = do
         <*> pTimingPoints
         <*> (try (Just <$> pColours) <|> return Nothing)
         <*> pHitObjects
+        <* eof
