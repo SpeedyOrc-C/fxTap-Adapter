@@ -205,6 +205,9 @@ pDifficulty = do
 pTag :: Parser String
 pTag = some $ noneOf " \t\r\n"
 
+pTags :: Parser [String]
+pTags = pTag `sepBy` some pWhite
+
 pMetadata :: Parser Metadata
 pMetadata = do
     pSectionTitle "Metadata"
@@ -215,7 +218,7 @@ pMetadata = do
     creator <- pString <* pLineSeparator
     version <- pString <* pLineSeparator
     source <- pString <* pLineSeparator
-    tags <- (pTag `sepBy` pWhite) <* pLineSeparator
+    tags <- pTags <* pLineSeparator
     beatmapId <- pString <* pLineSeparator
     beatmapSetId <- pString <* pLineSeparator
     return $ Metadata
