@@ -27,3 +27,12 @@ cabal run . -- my-beatmap.osu
 ```
 
 This will generate `my-beatmap.f4k`.
+
+## Exceptions
+
+Some beatmaps are not following the specification.
+Here are all the exceptions so far:
+
+* Allow `None` in `General`'s `SampleSet`.
+* Allow more than one space between tags.
+* Allow decimal `Events`' `startTime`
