@@ -10,7 +10,7 @@ import System.FilePath (takeBaseName, takeDirectory)
 import System.Environment (getArgs)
 
 import Osu.Parser (pOsu)
-import Osu.FxTap (wFxTap)
+import FxTap ( FxTapCompatible(toFxTap), putFxTap )
 
 debug parser = do
     t <- readFile "d.txt"
@@ -35,11 +35,14 @@ main = do
                     print parseError
                     exitFailure
 
-                Right beatmap -> do
+                Right osu -> do
                     let outputPath =
                             takeDirectory path ++ "/" ++
                             takeBaseName path ++ ".fxt"
-                    BL.writeFile outputPath (runPut $ wFxTap beatmap)
+
+                    let fxTap = toFxTap osu
+
+                    BL.writeFile outputPath (runPut $ putFxTap fxTap)
                     exitSuccess
 
         _ -> do

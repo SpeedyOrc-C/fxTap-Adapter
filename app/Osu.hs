@@ -1,5 +1,12 @@
 module Osu where
-import qualified Data.Map as M
+import Data.Map qualified as M
+import Data.Functor ( (<&>) )
+import Data.List (sortBy, groupBy)
+import Data.Function (on, (&))
+import Control.Monad.State (State, MonadState (state), evalState)
+
+import FxTap qualified
+import FxTap (FxTapCompatible (toFxTap), FxTap (FxTap))
 
 data Osu = Osu {
     general :: General,
@@ -155,3 +162,36 @@ data OsuHitObject
         hitSample :: HitSample
     }
     deriving Show
+
+instance FxTapCompatible Osu where
+    toFxTap :: Osu -> FxTap
+    toFxTap osu = toFxTap (4 :: Integer, osu)
+
+instance FxTapCompatible (Integer, Osu) where
+    toFxTap :: (Integer, Osu) -> FxTap
+    toFxTap (columnNumber, osu) = FxTap {
+        FxTap.title = title (metadata osu),
+        FxTap.artist = artist (metadata osu),
+        FxTap.notesColumns = notesColumns
+    } where
+        notesColumns = hitObjects osu
+            -- Calculate each note's column index
+            <&> (\hitObject ->
+                ((floor $ x hitObject * fromInteger columnNumber / 512.0) :: Integer
+                , hitObject))
+
+            -- Sort by column index
+            & sortBy (compare `on` fst)
+
+            -- Group by column index
+            & groupBy ((==) `on` fst)
+
+            -- Drop the redundant column index with `snd,
+            -- then convert them to fxTap's notes
+            & map ((`evalState` 0) . traverse (convert . snd))
+
+        convert :: OsuHitObject -> State Integer FxTap.Note
+        convert HitObjectCircle { timeHitObject } = state $ \currentTime ->
+            (FxTap.Tap (timeHitObject - currentTime), timeHitObject)
+        convert HitObjectHold { timeHitObject, endTime } = state $ \currentTime ->
+            (FxTap.Hold (timeHitObject - currentTime) endTime, timeHitObject)
