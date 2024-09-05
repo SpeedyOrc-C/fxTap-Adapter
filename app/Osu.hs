@@ -172,7 +172,8 @@ instance FxTapCompatible (Integer, Osu) where
     toFxTap (columnNumber, osu) = FxTap {
         FxTap.title = title (metadata osu),
         FxTap.artist = artist (metadata osu),
-        FxTap.notesColumns = notesColumns
+        FxTap.notesColumns = notesColumns,
+        FxTap.overallDifficulty = overallDifficulty (difficulty osu)
     } where
         notesColumns = hitObjects osu
             -- Calculate each note's column index

@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 module FxTap where
-import Data.Binary.Put (Put, putStringUtf8, putInt16le)
+import Data.Binary.Put (Put, putStringUtf8, putInt16le, putDoublele, putCharUtf8)
 import Data.Foldable (for_)
 import Control.Monad ( replicateM_ )
 
@@ -10,6 +10,7 @@ class FxTapCompatible beatmap where
 data FxTap = FxTap {
     title :: String,
     artist :: String,
+    overallDifficulty :: Double,
     -- 1st dimension : columns
     -- 2nd dimension : notes
     notesColumns :: [[Note]]
@@ -44,7 +45,9 @@ All integers in fxTap's binary beatmap is in LITTLE endian.
         [98, 76, 54, 32, 10, 42, 0, 0]
             6K with 98 notes in column 1, 42 notes in column 6
 
-60-     All notes. The structure of a single note is:
+60-68   Overall difficulty (IEEE floating number)
+
+70-     All notes. The structure of a single note is:
 
         00~01   Accumulated start time
         02~03   Duration
@@ -74,7 +77,7 @@ All integers in fxTap's binary beatmap is in LITTLE endian.
         And the accumulated time in each column is calculated separately.
 -}
 putFxTap :: FxTap -> Put
-putFxTap FxTap {title, artist, notesColumns} = do
+putFxTap FxTap {title, artist, notesColumns, overallDifficulty} = do
     putStringUtf8 "fx4K-beatmap-v01"
 
     let str32 :: String -> String
@@ -92,6 +95,17 @@ putFxTap FxTap {title, artist, notesColumns} = do
 
     replicateM_ (8 - length notesColumns) $ do
         putInt16le 0
+
+    putDoublele overallDifficulty
+
+    putCharUtf8 '\0'
+    putCharUtf8 '\0'
+    putCharUtf8 '\0'
+    putCharUtf8 '\0'
+    putCharUtf8 '\0'
+    putCharUtf8 '\0'
+    putCharUtf8 '\0'
+    putCharUtf8 '\0'
 
     for_ notesColumns $ \notesColumn -> do
         for_ notesColumn $ \case
