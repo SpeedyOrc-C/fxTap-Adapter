@@ -31,8 +31,9 @@ All integers in fxTap's binary beatmap is in LITTLE endian.
 10-2F   Beatmap's title
 30-4F   Beatmap's artist
 
-        These two strings don't have the 0 terminator,
-        unused memory are filled with spaces (0x20)
+        Unused memory are filled with zeros.
+        The last character must be terminated by 0.
+        So it allows 31 characters at most.
 
 50-5F   Number of notes in columns 1 to 8.
         Each number has 2 bytes.
@@ -82,10 +83,10 @@ putFxTap FxTap {title, artist, notesColumns, overallDifficulty} = do
 
     let str32 :: String -> String
         str32 string =
-            if length string <= 32 then
-                string ++ replicate (32 - length string) ' '
+            if length string <= 31 then
+                string ++ replicate (32 - length string) '\0'
             else
-                take 32 string
+                take 31 string ++ "\0"
 
     putStringUtf8 $ str32 title
     putStringUtf8 $ str32 artist

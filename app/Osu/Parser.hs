@@ -272,23 +272,26 @@ pOptionalOffset =
     <|> return (0, 0)
 
 pEvent :: Parser Event
-pEvent = pEventVideo <|> do
-    type' <- pInteger <* char ','
-    case type' of
-        0 -> string "0," *>
-            (Background
-            <$> pStringInList
-            <*> pOptionalOffset)
-        1 ->
-            Video
-            <$> pInteger <* char ','
-            <*> pStringInList
-            <*> pOptionalOffset
-        2 ->
-            Break
-            <$> pInteger <* char ','
-            <*> pInteger
-        _ -> error "Not implemented event type."
+pEvent =
+        pEventVideo
+    <|> pEventAudioSample
+    <|> do
+        type' <- pInteger <* char ','
+        case type' of
+            0 -> string "0," *>
+                (Background
+                <$> pStringInList
+                <*> pOptionalOffset)
+            1 ->
+                Video
+                <$> pInteger <* char ','
+                <*> pStringInList
+                <*> pOptionalOffset
+            2 ->
+                Break
+                <$> pInteger <* char ','
+                <*> pInteger
+            _ -> error "Not implemented event type."
 
 pEventVideo :: Parser Event
 pEventVideo = do
@@ -297,6 +300,18 @@ pEventVideo = do
         <$> pInteger <* char ','
         <*> pStringInList
         <*> pOptionalOffset
+
+pOptionalVolume :: Parser Integer
+pOptionalVolume = (char ',' *> pInteger) <|> return 100
+
+pEventAudioSample :: Parser Event
+pEventAudioSample = do
+    void $ string "Sample,"
+    AudioSample
+        <$> pInteger <* char ','
+        <*> pInteger <* char ','
+        <*> pString
+        <*> pOptionalVolume
 
 pEvents :: Parser [Event]
 pEvents = do

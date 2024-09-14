@@ -88,7 +88,7 @@ data Event
     }
     | Video {
         startTimeEvent :: Integer,
-        fileNameVideo :: String,
+        fileNameEvent :: String,
         offset :: (Integer, Integer)
     }
     | Break {
@@ -96,6 +96,12 @@ data Event
         endTimeEvent :: Integer
     }
     -- TODO: Storyboard
+    | AudioSample {
+        startTimeEvent :: Integer,
+        layerNumber :: Integer,
+        fileNameEvent :: String,
+        volume :: Integer
+    }
     deriving Show
 
 data Effects = Effects {
