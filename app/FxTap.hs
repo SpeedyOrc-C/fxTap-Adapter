@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 module FxTap where
-import Data.Binary.Put (Put, putStringUtf8, putInt16le, putDoublele, putCharUtf8)
+import Data.Binary.Put (Put, putStringUtf8, putInt16le, putDoublele, putCharUtf8, PutM)
 import Data.Foldable (for_)
 import Control.Monad ( replicateM_ )
 
@@ -20,6 +20,36 @@ data Note
     = Tap { accumulatedStartTime :: Integer }
     | Hold { accumulatedStartTime :: Integer, duration :: Integer }
     deriving Show
+
+data FxTapPutError
+    = NoteIntervalTooLarge Integer Integer
+    | HoldDurationTooLarge Integer Integer
+    deriving Show
+
+data FxTapPutWarning
+    = TitleTrimmed
+    | ArtistTrimmed
+    deriving Show
+
+data FxTapPutMessage = FxTapPutMessage [FxTapPutWarning] [FxTapPutError]
+    deriving Show
+
+fxTapPutCheck :: FxTap -> FxTapPutMessage
+fxTapPutCheck FxTap {title, artist, notesColumns} =
+    FxTapPutMessage
+        (m1f2 [(TitleTrimmed, length title > 31), (ArtistTrimmed, length artist > 31)])
+        (concat $ do
+            (column, notes) <- zip [1..] notesColumns
+            note <- notes
+            return . m1f2 $
+                [(NoteIntervalTooLarge column (accumulatedStartTime note),
+                    accumulatedStartTime note > ((2::Integer)^(31::Integer)-1))
+                ,(HoldDurationTooLarge column (duration note),
+                    duration note > ((2::Integer)^(31::Integer)-1))]
+        )
+    where
+        m1f2 :: [(a, Bool)] -> [a]
+        m1f2 = map fst . filter snd
 
 {-| Generate a binary representation of a fxTap beatmap.
 
