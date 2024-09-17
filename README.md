@@ -12,21 +12,23 @@ This is a osu! beatmap parser with a converter to the fxTap format.
 cabal build
 ```
 
+3. And you'll see it inside folder `dist-newstyle/build`
+
 ## Run
 
 ### Syntax
+
+Run with Cabal:
 
 ```sh
 cabal run . -- <beatmap-path>
 ```
 
-### Example
+Or run the executable directly:
 
 ```sh
-cabal run . -- my-beatmap.osu
+./fxTap-Adapter <beatmap-path>
 ```
-
-This will generate `my-beatmap.fxt`.
 
 ## Exceptions
 
