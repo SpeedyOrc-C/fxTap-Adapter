@@ -22,8 +22,8 @@ data Note
     deriving Show
 
 data FxTapPutError
-    = NoteIntervalTooLarge Integer Integer
-    | HoldDurationTooLarge Integer Integer
+    = NoteIntervalTooLarge { errorColumn :: Integer, largeValue :: Integer }
+    | HoldDurationTooLarge { errorColumn :: Integer, largeValue :: Integer }
     deriving Show
 
 data FxTapPutWarning
@@ -129,14 +129,7 @@ putFxTap FxTap {title, artist, notesColumns, overallDifficulty} = do
 
     putDoublele overallDifficulty
 
-    putCharUtf8 '\0'
-    putCharUtf8 '\0'
-    putCharUtf8 '\0'
-    putCharUtf8 '\0'
-    putCharUtf8 '\0'
-    putCharUtf8 '\0'
-    putCharUtf8 '\0'
-    putCharUtf8 '\0'
+    replicateM_ 8 (putCharUtf8 '\0')
 
     for_ notesColumns $ \notesColumn -> do
         for_ notesColumn $ \case

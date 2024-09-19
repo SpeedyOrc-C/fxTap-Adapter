@@ -1,6 +1,5 @@
 module Osu where
 import Data.Map qualified as M
-import Data.Functor ( (<&>) )
 import Data.List (sortBy, groupBy)
 import Data.Function (on, (&))
 import Control.Monad.State (State, MonadState (state), evalState)
@@ -183,9 +182,7 @@ instance FxTapCompatible (Integer, Osu) where
     } where
         notesColumns = hitObjects osu
             -- Calculate each note's column index
-            <&> (\hitObject ->
-                ((floor $ x hitObject * fromInteger columnNumber / 512.0) :: Integer
-                , hitObject))
+            & map (\hitObject -> (osuXToColumn (x hitObject), hitObject))
 
             -- Sort by column index
             & sortBy (compare `on` fst)
@@ -195,7 +192,10 @@ instance FxTapCompatible (Integer, Osu) where
 
             -- Drop the redundant column index with `snd,
             -- then convert them to fxTap's notes
-            & map ((`evalState` 0) . traverse (convert . snd))
+            & map ((\x -> evalState (traverse convert x) 0) . map snd)
+
+        osuXToColumn :: Double -> Integer
+        osuXToColumn x = floor $ x * fromInteger columnNumber / 512.0
 
         convert :: OsuHitObject -> State Integer FxTap.Note
         convert HitObjectCircle { timeHitObject } = state $ \currentTime ->
