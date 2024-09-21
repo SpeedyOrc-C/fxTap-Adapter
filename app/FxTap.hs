@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 module FxTap where
-import Data.Binary.Put (Put, putStringUtf8, putInt16le, putDoublele, putCharUtf8, PutM)
+import Data.Binary.Put (Put, putStringUtf8, putInt16le, putDoublele, putCharUtf8)
 import Data.Foldable (for_)
 import Control.Monad ( replicateM_ )
 
@@ -45,11 +45,15 @@ fxTapPutCheck FxTap {title, artist, notesColumns} =
                 [(NoteIntervalTooLarge column (accumulatedStartTime note),
                     accumulatedStartTime note > ((2::Integer)^(31::Integer)-1))
                 ,(HoldDurationTooLarge column (duration note),
-                    duration note > ((2::Integer)^(31::Integer)-1))]
+                    isHold note && duration note > ((2::Integer)^(31::Integer)-1))]
         )
     where
         m1f2 :: [(a, Bool)] -> [a]
         m1f2 = map fst . filter snd
+
+        isHold :: Note -> Bool
+        isHold Hold {} = True
+        isHold _ = False
 
 {-| Generate a binary representation of a fxTap beatmap.
 
@@ -65,7 +69,7 @@ All integers in fxTap's binary beatmap is in LITTLE endian.
         The last character must be terminated by 0.
         So it allows 31 characters at most.
 
-50-5F   Number of notes in columns 1 to 8.
+50-6F   Number of notes in columns 1 to 8.
         Each number has 2 bytes.
         This also indicates the number of keys in the gameplay.
 
@@ -76,9 +80,9 @@ All integers in fxTap's binary beatmap is in LITTLE endian.
         [98, 76, 54, 32, 10, 42, 0, 0]
             6K with 98 notes in column 1, 42 notes in column 6
 
-60-68   Overall difficulty (IEEE floating number)
+70-77   Overall difficulty (IEEE floating number)
 
-70-     All notes. The structure of a single note is:
+80-     All notes. The structure of a single note is:
 
         00~01   Accumulated start time
         02~03   Duration
@@ -124,7 +128,7 @@ putFxTap FxTap {title, artist, notesColumns, overallDifficulty} = do
     for_ notesColumns $ \notesColumn -> do
         putInt16le . fromIntegral $ length notesColumn
 
-    replicateM_ (8 - length notesColumns) $ do
+    replicateM_ (16 - length notesColumns) $ do
         putInt16le 0
 
     putDoublele overallDifficulty
