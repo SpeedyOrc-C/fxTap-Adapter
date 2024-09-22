@@ -14,10 +14,6 @@ import System.Environment (getArgs)
 import Osu.Parser (pOsu)
 import FxTap ( FxTapCompatible(toFxTap), putFxTap, fxTapPutCheck, FxTapPutMessage (FxTapPutMessage) )
 
-debug parser = do
-    t <- readFile "d.txt"
-    print $ parse parser "" t
-
 process :: String -> String -> IO ()
 process raw path = case parse pOsu "" raw of
     Left parseError -> do
