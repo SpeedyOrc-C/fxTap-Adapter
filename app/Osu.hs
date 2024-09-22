@@ -170,17 +170,14 @@ data OsuHitObject
 
 instance FxTapCompatible Osu where
     toFxTap :: Osu -> FxTap
-    toFxTap osu = toFxTap (4 :: Integer, osu)
-
-instance FxTapCompatible (Integer, Osu) where
-    toFxTap :: (Integer, Osu) -> FxTap
-    toFxTap (columnNumber, osu) = FxTap {
-        FxTap.title = title (metadata osu),
-        FxTap.artist = artist (metadata osu),
+    toFxTap (Osu { hitObjects, metadata, difficulty}) = FxTap {
+        FxTap.title = title metadata,
+        FxTap.artist = artist metadata,
         FxTap.notesColumns = notesColumns,
-        FxTap.overallDifficulty = overallDifficulty (difficulty osu)
-    } where
-        notesColumns = hitObjects osu
+        FxTap.overallDifficulty = overallDifficulty difficulty
+    }
+        where
+        notesColumns = hitObjects
             -- Calculate each note's column index
             & map (\hitObject -> (osuXToColumn (x hitObject), hitObject))
 
@@ -195,7 +192,7 @@ instance FxTapCompatible (Integer, Osu) where
             & map ((\x -> evalState (traverse convert x) 0) . map snd)
 
         osuXToColumn :: Double -> Integer
-        osuXToColumn x = floor $ x * fromInteger columnNumber / 512.0
+        osuXToColumn x = floor $ x * circleSize difficulty / 512.0
 
         convert :: OsuHitObject -> State Integer FxTap.Note
         convert HitObjectCircle { timeHitObject } = state $ \currentTime ->
