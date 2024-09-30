@@ -1,10 +1,12 @@
 # fxTap Adapter
 
-This is a osu! beatmap parser with a converter to the fxTap format.
+This is a osu! beatmap parser with a converter
+from osu!mania to the fxTap format.
 
 ## Build
 
-1. Install Cabal and Glasgow Haskell Compiler. Or install GHCup (contains both of them) instead.
+1. Install Cabal and Glasgow Haskell Compiler.
+   Or install GHCup (contains both of them) instead.
 
 2. Run this command:
 
@@ -24,10 +26,18 @@ Run with Cabal:
 cabal run . -- <beatmap-path>
 ```
 
+```sh
+cabal run . -- <beatmap-path> <output-path>
+```
+
 Or run the executable directly:
 
 ```sh
-./fxTap-Adapter <beatmap-path>
+fxTap-Adapter <beatmap-path>
+```
+
+```sh
+fxTap-Adapter <beatmap-path> <output-path>
 ```
 
 ## Exceptions

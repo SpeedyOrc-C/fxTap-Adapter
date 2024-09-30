@@ -1,8 +1,14 @@
 # Revision history for fxTap-Adapter
 
+## 0.3.0.0 -- 2024-09-30
+
+## Feature
+
+* Allow specifying output path.
+
 ## 0.2.0.0 -- 2024-09-22
 
-### Bugfixes
+### Bugfix
 
 * Column number is always 4.
 
