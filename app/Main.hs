@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Main where
 
 import Data.ByteString.Lazy qualified as BL
@@ -5,22 +6,23 @@ import Data.ByteString.Lazy qualified as BL
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Text.Parsec (parse)
 import Data.Maybe (fromMaybe)
-import Data.Foldable (traverse_)
+import Data.Foldable (for_)
 import Data.Binary.Put (runPut)
-import Control.Monad (unless)
+import Control.Monad (when)
 import System.Exit (exitFailure, exitSuccess)
 import System.FilePath (dropExtension)
 import System.Environment (getArgs)
 
 import Osu.Parser (pOsu)
-import FxTap ( FxTapCompatible(toFxTap), putFxTap, fxTapPutCheck, FxTapPutMessage (FxTapPutMessage) )
+import FxTap ( FxTapCompatible(toFxTap), putFxTap )
+import FxTap.Checker ( fxTapChecker, runChecker, FxTapMessage (..), isError )
 
 process :: FilePath -> Maybe FilePath -> IO ()
 process inputPath maybeOutputPath = do
     raw <- readFile inputPath
     case parse pOsu "" raw of
         Left parseError -> do
-            putStrLn "Bad beatmap."
+            putStrLn "Bad beatmap!"
             putStrLn "If you believe this is an error, report to us."
             putStrLn ""
             print parseError
@@ -36,17 +38,15 @@ process inputPath maybeOutputPath = do
 
                 fxTap = toFxTap osu
 
-                FxTapPutMessage warnings errors = fxTapPutCheck fxTap
+                messages = runChecker fxTapChecker fxTap
 
-            unless (null warnings) $ do
-                putStrLn "Warning(s)"
-                traverse_ print warnings
-                putStrLn ""
+            for_ messages $ \message -> do
+                putStrLn $ case message of
+                    FxTapWarning {} -> "[WARNING]"
+                    FxTapError {} -> "[ERROR]"
+                putStr "    "; print message
 
-            unless (null errors) $ do
-                putStrLn "Error(s)"
-                traverse_ print errors
-                exitFailure
+            when (any isError messages) exitFailure
 
             BL.writeFile outputPath (runPut $ putFxTap fxTap)
             exitSuccess
