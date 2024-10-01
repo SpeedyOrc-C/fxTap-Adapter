@@ -196,6 +196,8 @@ instance FxTapCompatible Osu where
 
         convert :: OsuHitObject -> State Integer FxTap.Note
         convert HitObjectCircle { timeHitObject } = state $ \currentTime ->
-            (FxTap.Tap (timeHitObject - currentTime), timeHitObject)
+            ( FxTap.Tap (timeHitObject - currentTime)
+            , timeHitObject)
         convert HitObjectHold { timeHitObject, endTime } = state $ \currentTime ->
-            (FxTap.Hold (timeHitObject - currentTime) endTime, timeHitObject)
+            ( FxTap.Hold (timeHitObject - currentTime) (endTime - timeHitObject)
+            , timeHitObject)
