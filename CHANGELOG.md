@@ -1,8 +1,14 @@
 # Revision history for fxTap-Adapter
 
+## 0.4.0.0 -- 2024-10-01
+
+### Bugfix
+
+* Incorrect duration for hold notes.
+
 ## 0.3.0.0 -- 2024-09-30
 
-## Feature
+### Feature
 
 * Allow specifying output path.
 
