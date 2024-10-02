@@ -67,6 +67,7 @@ executable fxTap-Adapter
         , Osu.Parser
         , FxTap
         , FxTap.Checker
+        , FxTap.Put
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 module Main where
 
 import Data.ByteString.Lazy qualified as BL
@@ -14,7 +13,8 @@ import System.FilePath (dropExtension)
 import System.Environment (getArgs)
 
 import Osu.Parser (pOsu)
-import FxTap ( FxTapCompatible(toFxTap), putFxTap )
+import FxTap ( FxTapCompatible(toFxTap), toFxTap )
+import FxTap.Put ( putFxTap )
 import FxTap.Checker ( fxTapChecker, runChecker, FxTapMessage (..), isError, Explain (..) )
 
 red :: String -> String
