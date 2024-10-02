@@ -1,5 +1,11 @@
 # Revision history for fxTap-Adapter
 
+## 0.4.0.1 -- 2024-10-02
+
+### Feature
+
+* Improved errors and warnings.
+
 ## 0.4.0.0 -- 2024-10-01
 
 ### Bugfix
