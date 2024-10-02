@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module FxTap.Checker where
 
 import Data.Function ((&))
@@ -108,6 +109,39 @@ isError _ = False
 isHold :: Note -> Bool
 isHold Hold {} = True
 isHold _ = False
+
+class Explain a where
+    explain :: a -> String
+
+instance Explain FxTapWarning where
+    explain :: FxTapWarning -> String
+    explain TitleTrimmed =
+        "Title is too long to fit in, only 31 characters are kept."
+    explain ArtistTrimmed =
+        "Artist is too long to fit in, only 31 characters are kept."
+    explain OverlappedHold {..} =
+        "The #" ++ show (overlappedHoldIndex + 1) ++
+        " note in column #" ++ show (overlappedColumnIndex + 1) ++
+        " overlaps with the following " ++ show overlappedNotesCount ++
+        " notes."
+
+instance Explain FxTapError where
+    explain :: FxTapError -> String
+    explain NoteIntervalTooLarge {..} =
+        "The #" ++ show (overflowNoteIndex + 1) ++
+        " note in column #" ++ show (overflowColumnIndex + 1) ++
+        " has an interval of " ++ show overflowedValue ++
+        " which is too large."
+    explain HoldDurationTooLarge {..} =
+        "The #" ++ show (overflowNoteIndex + 1) ++
+        " hold note in column #" ++ show (overflowColumnIndex + 1) ++
+        " has a duration of " ++ show overflowedValue ++
+        " which is too large."
+
+instance Explain FxTapMessage where
+    explain :: FxTapMessage -> String
+    explain (FxTapWarning warning) = explain warning
+    explain (FxTapError error') = explain error'
 
 instance Semigroup FxTapChecker where
     (<>) :: FxTapChecker -> FxTapChecker -> FxTapChecker

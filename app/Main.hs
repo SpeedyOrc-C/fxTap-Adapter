@@ -15,7 +15,13 @@ import System.Environment (getArgs)
 
 import Osu.Parser (pOsu)
 import FxTap ( FxTapCompatible(toFxTap), putFxTap )
-import FxTap.Checker ( fxTapChecker, runChecker, FxTapMessage (..), isError )
+import FxTap.Checker ( fxTapChecker, runChecker, FxTapMessage (..), isError, Explain (..) )
+
+red :: String -> String
+red str = "\x1b[31m" ++ str ++ "\x1b[0m"
+
+yellow :: String -> String
+yellow str = "\x1b[33m" ++ str ++ "\x1b[0m"
 
 process :: FilePath -> Maybe FilePath -> IO ()
 process inputPath maybeOutputPath = do
@@ -41,10 +47,10 @@ process inputPath maybeOutputPath = do
                 messages = runChecker fxTapChecker fxTap
 
             for_ messages $ \message -> do
-                putStrLn $ case message of
-                    FxTapWarning {} -> "[WARNING]"
-                    FxTapError {} -> "[ERROR]"
-                putStr "    "; print message
+                putStr $ case message of
+                    FxTapWarning {} -> yellow "[WARNING] "
+                    FxTapError {} -> red "[ERROR] "
+                putStrLn $ explain message
 
             when (any isError messages) exitFailure
 
