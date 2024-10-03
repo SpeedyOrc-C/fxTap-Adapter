@@ -1,13 +1,13 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RecordWildCards #-}
 
-module FxTap.Put where
+module Data.Beatmap.FxTap.Put where
 
 import Data.Foldable (for_)
 import Data.Binary.Put (Put, putStringUtf8, putInt16le, putDoublele, putCharUtf8)
 import Control.Monad ( replicateM_ )
 
-import FxTap (FxTap(..), Note (..))
+import Data.Beatmap.FxTap (FxTap(..), Note (..))
 
 {-| Generate a binary representation of a fxTap beatmap.
 

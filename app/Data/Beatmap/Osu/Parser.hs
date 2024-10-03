@@ -1,4 +1,4 @@
-module Osu.Parser where
+module Data.Beatmap.Osu.Parser where
 
 import Data.Map qualified as M
 import Data.Bits ( Bits((.&.), shift) )
@@ -7,7 +7,7 @@ import Text.Parsec (noneOf, char, string, Parsec, digit, (<|>), try, eof)
 import Text.Parsec.Combinator (sepBy)
 import Control.Applicative ( Alternative(empty, some, many) )
 
-import Osu
+import Data.Beatmap.Osu
 
 b :: Integer -> Integer -> Bool
 b bitNumber number = number .&. (2^bitNumber) /= 0

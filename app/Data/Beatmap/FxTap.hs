@@ -1,4 +1,4 @@
-module FxTap where
+module Data.Beatmap.FxTap where
 
 class FxTapCompatible beatmap where
     toFxTap :: beatmap -> FxTap

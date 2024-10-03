@@ -1,11 +1,12 @@
-module Osu where
+module Data.Beatmap.Osu where
+
 import Data.Map qualified as M
 import Data.List (sortBy, groupBy)
 import Data.Function (on, (&))
 import Control.Monad.State (State, MonadState (state), evalState)
 
-import FxTap qualified
-import FxTap (FxTapCompatible (toFxTap), FxTap (FxTap))
+import Data.Beatmap.FxTap qualified as FxTap
+import Data.Beatmap.FxTap (FxTapCompatible (toFxTap), FxTap (FxTap))
 
 data Osu = Osu {
     general :: General,

@@ -1,9 +1,10 @@
 {-# LANGUAGE RecordWildCards #-}
-module FxTap.Checker where
+
+module Data.Beatmap.FxTap.Checker where
 
 import Data.Function ((&))
 
-import FxTap (FxTap (..), Note (..))
+import Data.Beatmap.FxTap (FxTap (..), Note (..))
 
 data FxTapWarning
     = TitleTrimmed

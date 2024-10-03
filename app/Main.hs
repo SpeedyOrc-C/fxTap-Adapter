@@ -12,10 +12,10 @@ import System.Exit (exitFailure, exitSuccess)
 import System.FilePath (dropExtension)
 import System.Environment (getArgs)
 
-import Osu.Parser (pOsu)
-import FxTap ( FxTapCompatible(toFxTap), toFxTap )
-import FxTap.Put ( putFxTap )
-import FxTap.Checker ( fxTapChecker, runChecker, FxTapMessage (..), isError, Explain (..) )
+import Data.Beatmap.Osu.Parser (pOsu)
+import Data.Beatmap.FxTap ( FxTapCompatible(toFxTap), toFxTap )
+import Data.Beatmap.FxTap.Put ( putFxTap )
+import Data.Beatmap.FxTap.Checker ( fxTapChecker, runChecker, FxTapMessage (..), isError, Explain (..) )
 
 red :: String -> String
 red str = "\x1b[31m" ++ str ++ "\x1b[0m"
