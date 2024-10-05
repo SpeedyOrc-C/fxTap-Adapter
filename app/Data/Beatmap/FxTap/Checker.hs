@@ -64,8 +64,8 @@ columnOverlapChecker ((noteIndex, Hold {duration}):notes) =
         & fromIntegral . length
 
 overlapChecker :: FxTapChecker
-overlapChecker = FxTapChecker $ \FxTap {notesColumns} -> do
-    (columnIndex, notes) <- zip [0..] notesColumns
+overlapChecker = FxTapChecker $ \FxTap {noteColumns} -> do
+    (columnIndex, notes) <- zip [0..] noteColumns
     (holdIndex, overlapCount) <- columnOverlapChecker (zip [0..] notes)
 
     return $ FxTapWarning $ OverlappedHold columnIndex holdIndex overlapCount
@@ -74,8 +74,8 @@ u16UpperBound :: Integer
 u16UpperBound = (2 :: Integer) ^ (16 :: Integer) - 1
 
 intervalOverflowChecker :: FxTapChecker
-intervalOverflowChecker =  FxTapChecker $ \FxTap {notesColumns} -> do
-    (columnIndex, notes) <- zip [0..] notesColumns
+intervalOverflowChecker =  FxTapChecker $ \FxTap {noteColumns} -> do
+    (columnIndex, notes) <- zip [0..] noteColumns
     (noteIndex, note) <- zip [0..] notes
 
     [FxTapError $
@@ -83,8 +83,8 @@ intervalOverflowChecker =  FxTapChecker $ \FxTap {notesColumns} -> do
         | accumulatedStartTime note > u16UpperBound]
 
 durationOverflowChecker :: FxTapChecker
-durationOverflowChecker =  FxTapChecker $ \FxTap {notesColumns} -> do
-    (columnIndex, notes) <- zip [0..] notesColumns
+durationOverflowChecker =  FxTapChecker $ \FxTap {noteColumns} -> do
+    (columnIndex, notes) <- zip [0..] noteColumns
     (noteIndex, note) <- zip [0..] notes
 
     [FxTapError $

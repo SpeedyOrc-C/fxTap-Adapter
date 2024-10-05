@@ -23,7 +23,7 @@ name:               fxTap-Adapter
 version:            0.4.0.1
 
 -- A short (one-line) description of the package.
-synopsis: A converter from osu!mania beatmaps to fxTap's.
+synopsis: Port other rhythm games' beatmaps to fxTap.
 
 -- A longer description of the package.
 -- description:
@@ -63,8 +63,10 @@ executable fxTap-Adapter
 
     -- Modules included in this executable, other than Main.
     other-modules:
-          Data.Beatmap.Osu
+          Data.Beatmap.IR
+        , Data.Beatmap.Osu
         , Data.Beatmap.Osu.Parser
+        , Data.Beatmap.Malody
         , Data.Beatmap.FxTap
         , Data.Beatmap.FxTap.Checker
         , Data.Beatmap.FxTap.Put
@@ -81,6 +83,7 @@ executable fxTap-Adapter
         , binary
         , mtl
         , aeson ^>=2.2.3.0
+        , vector
 
     -- Directories containing source files.
     hs-source-dirs:   app

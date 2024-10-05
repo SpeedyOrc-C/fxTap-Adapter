@@ -1,12 +1,14 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Data.Beatmap.Osu where
 
 import Data.Map qualified as M
-import Data.List (sortBy, groupBy)
+import Data.List (groupBy, sortOn)
 import Data.Function (on, (&))
-import Control.Monad.State (State, MonadState (state), evalState)
 
-import Data.Beatmap.FxTap qualified as FxTap
-import Data.Beatmap.FxTap (FxTapCompatible (toFxTap), FxTap (FxTap))
+import Data.Beatmap.IR qualified as IR
+import Data.Beatmap.IR ( INote, INoteCompatible (..) )
+import Data.Beatmap.FxTap (FxTapCompatible (..))
 
 data Osu = Osu {
     general :: General,
@@ -169,36 +171,37 @@ data OsuHitObject
     }
     deriving Show
 
-instance FxTapCompatible Osu where
-    toFxTap :: Osu -> FxTap
-    toFxTap (Osu { hitObjects, metadata, difficulty}) = FxTap {
-        FxTap.title = title metadata,
-        FxTap.artist = artist metadata,
-        FxTap.notesColumns = notesColumns,
-        FxTap.overallDifficulty = overallDifficulty difficulty
-    }
+instance INoteCompatible Osu where
+    getINoteColumns :: Osu -> [[INote]]
+    getINoteColumns (Osu { hitObjects, difficulty }) =
+        hitObjects
+        -- Calculate each note's column index, this is because each column
+        -- accepts notes that have an x-coord locates inside a specific interval.
+        & map (\hitObject -> (osuXToColumn (x hitObject), hitObject))
+        -- Sort by column index
+        & sortOn fst
+        -- Group by column index
+        & groupBy ((==) `on` fst)
+        -- Drop the redundant column index with `snd` and convert them to IR
+        & map (map (convert . snd))
+
         where
-        notesColumns = hitObjects
-            -- Calculate each note's column index
-            & map (\hitObject -> (osuXToColumn (x hitObject), hitObject))
+            osuXToColumn :: Double -> Integer
+            osuXToColumn x = floor $ x * circleSize difficulty / 512.0
 
-            -- Sort by column index
-            & sortBy (compare `on` fst)
+            convert = \case
+                HitObjectCircle { timeHitObject } ->
+                    IR.ITap timeHitObject
+                HitObjectHold { timeHitObject, endTime } ->
+                    IR.IHold timeHitObject endTime
 
-            -- Group by column index
-            & groupBy ((==) `on` fst)
+instance FxTapCompatible Osu where
+    getTitle :: Osu -> String
+    getTitle = title . metadata
 
-            -- Drop the redundant column index with `snd,
-            -- then convert them to fxTap's notes
-            & map ((\x -> evalState (traverse convert x) 0) . map snd)
+    getArtist :: Osu -> String
+    getArtist = artist . metadata
 
-        osuXToColumn :: Double -> Integer
-        osuXToColumn x = floor $ x * circleSize difficulty / 512.0
+    getOverallDifficulty :: Osu -> Double
+    getOverallDifficulty = overallDifficulty . difficulty
 
-        convert :: OsuHitObject -> State Integer FxTap.Note
-        convert HitObjectCircle { timeHitObject } = state $ \currentTime ->
-            ( FxTap.Tap (timeHitObject - currentTime)
-            , timeHitObject)
-        convert HitObjectHold { timeHitObject, endTime } = state $ \currentTime ->
-            ( FxTap.Hold (timeHitObject - currentTime) (endTime - timeHitObject)
-            , timeHitObject)

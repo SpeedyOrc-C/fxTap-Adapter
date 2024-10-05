@@ -79,17 +79,17 @@ putFxTap FxTap {..} = do
     putStringUtf8 $ str32 title
     putStringUtf8 $ str32 artist
 
-    for_ notesColumns $ \notesColumn -> do
+    for_ noteColumns $ \notesColumn -> do
         putInt16le . fromIntegral $ length notesColumn
 
-    replicateM_ (16 - length notesColumns) $ do
+    replicateM_ (16 - length noteColumns) $ do
         putInt16le 0
 
     putDoublele overallDifficulty
 
     replicateM_ 8 (putCharUtf8 '\0')
 
-    for_ notesColumns $ \notesColumn -> do
+    for_ noteColumns $ \notesColumn -> do
         for_ notesColumn $ \case
 
             Tap {accumulatedStartTime} -> do

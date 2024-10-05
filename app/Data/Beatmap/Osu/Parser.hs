@@ -343,8 +343,8 @@ pColours = do
         <*> pKv' "SliderTrackOverride" (Just <$> pColour) Nothing
         <*> pKv' "SliderBorder" (Just <$> pColour) Nothing
 
-pOsu :: Parser Osu
-pOsu = do
+parserOsu :: Parser Osu
+parserOsu = do
     pHeader
     Osu
         <$> pGeneral
