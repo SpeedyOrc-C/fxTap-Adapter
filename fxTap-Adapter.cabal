@@ -20,7 +20,7 @@ name:               fxTap-Adapter
 -- PVP summary:     +-+------- breaking API changes
 --                  | | +----- non-breaking API additions
 --                  | | | +--- code changes with no API change
-version:            0.4.0.1
+version:            0.5.0.0
 
 -- A short (one-line) description of the package.
 synopsis: Port other rhythm games' beatmaps to fxTap.
@@ -54,7 +54,7 @@ extra-doc-files:    CHANGELOG.md
 common warnings
     ghc-options: -Wall
 
-executable fxTap-Adapter
+executable fxta
     -- Import common warning flags.
     import:           warnings
 

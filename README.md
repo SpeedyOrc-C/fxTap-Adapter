@@ -1,43 +1,46 @@
 # fxTap Adapter
 
-This is a osu! beatmap parser with a converter
-from osu!mania to the fxTap format.
+This is a osu! and Malody beatmap parser with a converter to the fxTap format.
 
-## Build
+## Usage
 
-1. Install Cabal and Glasgow Haskell Compiler.
-   Or install GHCup (contains both of them) instead.
+### Build
 
-2. Run this command:
+Install Cabal and Glasgow Haskell Compiler.
+Using [GHCup](https://www.haskell.org/ghcup) is recommended.
+Then run this command:
 
 ```sh
 cabal build
 ```
 
-3. And you'll see it inside folder `dist-newstyle/build`
+And you can find the executable in folder [dist-newstyle](./dist-newstyle).
 
-## Run
+### Install
 
-### Syntax
+Run this command:
 
-Run with Cabal:
-
-```sh
-cabal run . -- <beatmap-path>
+```
+cabal install
 ```
 
-```sh
-cabal run . -- <beatmap-path> <output-path>
+And the executable named `fxta` will be installed to Cabal's folder.
+
+### Run
+
+This will generate a binary fxTap beatmap from any osu! and Malody beatmaps.
+
+```
+fxta <beatmap_path> [<output_path>]
 ```
 
-Or run the executable directly:
+If you want a C header that can be imported to any C/C++ program,
+use `-ch` flag (stands for "C header"), and add the symbol name.
+So that you don't need to worry about number's endianness
+in different platforms.
 
-```sh
-fxTap-Adapter <beatmap-path>
 ```
-
-```sh
-fxTap-Adapter <beatmap-path> <output-path>
+fxta [-ch <symbol_name>] <beatmap_path> [<output_path>]
 ```
 
 ## Exceptions
