@@ -1,6 +1,6 @@
 # fxTap Adapter
 
-This is a osu! and Malody beatmap parser with a converter to the fxTap format.
+This is a [osu!](https://osu.ppy.sh) and [Malody](https://malody.mugzone.net) beatmap parser with a converter to fxTap format.
 
 ## Usage
 
@@ -51,3 +51,7 @@ Here are all the exceptions so far:
 * Allow `None` in `General`'s `SampleSet`.
 * Allow more than one space between tags.
 * Allow decimal `Events`' `startTime`
+
+## Binary Format
+
+Please refer to the comment in [this file](./app/Data/Beatmap/FxTap/Put.hs).

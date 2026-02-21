@@ -48,13 +48,13 @@ rock outputType inputPath maybeOutputPath = do
         extension -> return $ Left $ "Not supported extension " ++ tail extension ++ "."
 
     case result of
-        Left error' -> do
-            putStrLn $ red "[SYNTAX ERROR]"
-            putStrLn error'
-            putStrLn ""
-            putStrLn "If you believe this is an error, report it here:"
-            putStrLn "https://github.com/SpeedyOrc-C/fxTap-Adapter/issues"
-            exitFailure
+        Left error' -> traverse_ putStrLn
+            [ red "[SYNTAX ERROR]"
+            , error'
+            , ""
+            , "If you believe this is an error, report it here:"
+            , "https://github.com/SpeedyOrc-C/fxTap-Adapter/issues"
+            ] >> exitFailure
 
         Right fxTap -> do
             let extension = case outputType of
@@ -65,11 +65,11 @@ rock outputType inputPath maybeOutputPath = do
             let outputPath = dropExtension (fromMaybe defaultOutputPath maybeOutputPath) ++ extension
             let messages = runChecker fxTapChecker fxTap
 
-            for_ messages $ \message -> do
-                putStr $ case message of
+            for_ messages $ \msg -> do
+                putStr $ case msg of
                     FxTapWarning {} -> yellow "[WARNING] "
                     FxTapError {} -> red "[ERROR] "
-                putStrLn $ explain message
+                putStrLn $ explain msg
 
             when (any isError messages) exitFailure
 
@@ -83,8 +83,7 @@ printVersion :: IO ()
 printVersion = putStrLn "fxTap Adapter 0.5.0.0"
 
 printHelp :: IO ()
-printHelp =
-    traverse_ putStrLn
+printHelp = traverse_ putStrLn
     [ "Usage: fxta [-ch <symbol_name>] <beatmap_path> [<output_path>]"
     , ""
     , "beatmap_path : Path to osu! or Malody beatmap."

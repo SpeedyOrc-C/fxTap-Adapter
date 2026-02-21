@@ -204,4 +204,3 @@ instance FxTapCompatible Osu where
 
     getOverallDifficulty :: Osu -> Double
     getOverallDifficulty = overallDifficulty . difficulty
-
