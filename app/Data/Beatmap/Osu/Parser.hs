@@ -5,7 +5,7 @@ import Data.Bits ( Bits((.&.), shift) )
 import Data.Functor ( (<&>), void )
 import Text.Parsec (noneOf, char, string, Parsec, digit, (<|>), try, eof)
 import Text.Parsec.Combinator (sepBy)
-import Control.Applicative ( Alternative(empty, some, many) )
+import Control.Applicative ( Alternative(empty, some, many), asum )
 
 import Data.Beatmap.Osu
 
@@ -169,6 +169,28 @@ pHitSampleOptionalHold :: Parser HitSample
 pHitSampleOptionalHold =
     (char ':' *> pHitSample) <|> return (HitSample Nothing Nothing 0 0 "")
 
+pSliderCurveType :: Parser SliderCurveType
+pSliderCurveType = asum
+    [ Bezier <$ char 'B'
+    , CentripetalCatmullRom <$ char 'C'
+    , Linear <$ char 'L'
+    , PerfectCircle <$ char 'P'
+    ]
+
+pSliderCurvePoint :: Parser (Integer, Integer)
+pSliderCurvePoint = do
+    void $ char '|'
+    x <- pInteger
+    void $ char ':'
+    y <- pInteger
+    return (x, y)
+
+pPipeList :: Parser a -> Parser [a]
+pPipeList p = ((:) <$> p <*> many (char '|' *> p)) <|> pure []
+
+pColonList :: Parser a -> Parser [a]
+pColonList p = ((:) <$> p <*> many (char ':' *> p)) <|> pure []
+
 pHitObject :: Parser OsuHitObject
 pHitObject = do
     x <- pDouble <* char ','
@@ -187,8 +209,24 @@ pHitObject = do
         HitObjectHold x y time hitSound endTime
             <$> pHitSampleOptionalHold
 
+    else if isSlider type' then do
+        void $ char ','
+        curveType <- pSliderCurveType
+        curvePoints <- many pSliderCurvePoint
+        void $ char ','
+        slides <- pInteger
+        void $ char ','
+        sliderLength <- pDouble
+        void $ char ','
+        edgeSounds <- pPipeList pInteger
+        void $ char ','
+        edgeSets <- pPipeList ((,) <$> pHitSound <*> (char ':' *> pHitSound))
+        void $ char ','
+        HitObjectSlider x y time hitSound curveType curvePoints slides sliderLength edgeSounds edgeSets
+            <$> pHitSample
+
     else
-        error "Unexpected hit object type."
+        fail $ "Unexpected hit object type: " ++ show type'
 
 pHitObjects :: Parser [OsuHitObject]
 pHitObjects = do
