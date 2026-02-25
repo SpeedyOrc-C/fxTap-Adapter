@@ -84,6 +84,7 @@ executable fxta
         , mtl
         , aeson
         , vector
+        , optparse-applicative
 
     -- Directories containing source files.
     hs-source-dirs:   app

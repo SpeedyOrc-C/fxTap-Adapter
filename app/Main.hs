@@ -2,121 +2,148 @@ module Main where
 
 import Data.ByteString.Lazy qualified as BL
 
-import GHC.IO.Encoding (setLocaleEncoding, utf8)
-import Text.Parsec (parse)
-import Data.Char (toLower)
-import Data.Maybe (fromMaybe)
-import Data.Foldable (for_, traverse_)
-import Data.Binary.Put (runPut)
-import Data.Aeson (decode)
+import Control.Applicative (Alternative ((<|>)), optional, (<**>))
 import Control.Monad (when)
+import Data.Aeson (decode)
+import Data.Beatmap.FxTap (FxTapCompatible (toFxTap), toFxTap)
+import Data.Beatmap.FxTap.Checker (Explain (..), FxTapMessage (..), fxTapChecker, isError, runChecker)
+import Data.Beatmap.FxTap.Put (putFxTapBinary, putFxTapCHeader)
+import Data.Beatmap.Malody (Malody)
+import Data.Beatmap.Osu.Parser (parserOsu)
+import Data.Binary.Put (runPut)
+import Data.Char (toLower)
+import Data.Foldable (for_, traverse_)
+import Data.Maybe (fromMaybe)
+import GHC.IO.Encoding (setLocaleEncoding, utf8)
+import Options.Applicative (
+    Parser,
+    execParser,
+    flag',
+    fullDesc,
+    help,
+    helper,
+    info,
+    long,
+    metavar,
+    short,
+    strOption,
+ )
 import System.Exit (exitFailure, exitSuccess)
 import System.FilePath (dropExtension, takeExtension)
-import System.Environment (getArgs)
+import Text.Parsec (parse)
 
-import Data.Beatmap.FxTap ( FxTapCompatible(toFxTap), toFxTap )
-import Data.Beatmap.FxTap.Put ( putFxTapBinary, putFxTapCHeader )
-import Data.Beatmap.FxTap.Checker ( fxTapChecker, runChecker, FxTapMessage (..), isError, Explain (..) )
-import Data.Beatmap.Osu.Parser (parserOsu)
-import Data.Beatmap.Malody (Malody)
+data FxTapArgs
+    = FxTapMain
+        { outputType :: OutputType
+        , inputPath :: FilePath
+        , outputPath :: Maybe FilePath
+        }
+    | FxTapVersion
 
-data OutputType = OutputBinary | OutputCHeader String
+data OutputType = OutputBinary | OutputC String
 
-red :: String -> String
-red str = "\x1b[31m" ++ str ++ "\x1b[0m"
+main :: IO ()
+main = do
+    setLocaleEncoding utf8
+    getConfig >>= _main
 
-yellow :: String -> String
-yellow str = "\x1b[33m" ++ str ++ "\x1b[0m"
-
-rock :: OutputType -> FilePath -> Maybe FilePath -> IO ()
-rock outputType inputPath maybeOutputPath = do
+_main :: FxTapArgs -> IO ()
+_main FxTapVersion = putStrLn "0.5.0.0"
+_main (FxTapMain{outputType, inputPath, outputPath}) = do
     result <- case map toLower (takeExtension inputPath) of
         ".osu" -> do
             raw <- readFile inputPath
             return $ case parse parserOsu "" raw of
                 Left error' -> Left (show error')
                 Right osu -> Right (toFxTap osu)
-
         ".mc" -> do
             raw <- BL.readFile inputPath
             return $ case decode raw :: Maybe Malody of
                 Nothing -> Left "Cannot parse this Malody beatmap."
                 Just malody -> Right (toFxTap malody)
-
         "" -> return $ Left "No extension found, cannot determine the file type."
-
-        extension -> return $ Left $ "Not supported extension " ++ tail extension ++ "."
+        '.' : extension -> return $ Left $ "Not supported extension " ++ extension ++ "."
+        _ -> error "Unreachable"
 
     case result of
-        Left error' -> traverse_ putStrLn
-            [ red "[SYNTAX ERROR]"
-            , error'
-            , ""
-            , "If you believe this is an error, report it here:"
-            , "https://github.com/SpeedyOrc-C/fxTap-Adapter/issues"
-            ] >> exitFailure
-
+        Left error' ->
+            traverse_
+                putStrLn
+                [ red "[SYNTAX ERROR]"
+                , error'
+                , ""
+                , "If you believe this is an error, report it here:"
+                , "https://github.com/SpeedyOrc-C/fxTap-Adapter/issues"
+                ]
+                >> exitFailure
         Right fxTap -> do
             let extension = case outputType of
                     OutputBinary -> ".fxt"
-                    OutputCHeader {} -> ".fxt.h"
+                    OutputC{} -> ".fxt.h"
 
             let defaultOutputPath = dropExtension inputPath
-            let outputPath = dropExtension (fromMaybe defaultOutputPath maybeOutputPath) ++ extension
+            let outputPath' = dropExtension (fromMaybe defaultOutputPath outputPath) ++ extension
             let messages = runChecker fxTapChecker fxTap
 
             for_ messages $ \msg -> do
                 putStr $ case msg of
-                    FxTapWarning {} -> yellow "[WARNING] "
-                    FxTapError {} -> red "[ERROR] "
+                    FxTapWarning{} -> yellow "[WARNING] "
+                    FxTapError{} -> red "[ERROR] "
                 putStrLn $ explain msg
 
             when (any isError messages) exitFailure
 
-            BL.writeFile outputPath . runPut $ case outputType of
+            BL.writeFile outputPath' . runPut $ case outputType of
                 OutputBinary -> putFxTapBinary fxTap
-                OutputCHeader symbolName -> putFxTapCHeader symbolName fxTap
+                OutputC symbolName -> putFxTapCHeader symbolName fxTap
 
             exitSuccess
 
 printVersion :: IO ()
 printVersion = putStrLn "fxTap Adapter 0.5.0.0"
 
-printHelp :: IO ()
-printHelp = traverse_ putStrLn
-    [ "Usage: fxta [-ch <symbol_name>] <beatmap_path> [<output_path>]"
-    , ""
-    , "beatmap_path : Path to osu! or Malody beatmap."
-    , "output_path : Path to the converted beatmap. If omitted, it is the same as <beatmap_path>."
-    , "symbol_name : If provided, the output will be a C header file, with a initialised variable called <symbol_name>."
-    ]
+getConfig :: IO FxTapArgs
+getConfig = execParser (info (pArgs <**> helper) fullDesc)
 
-printInvalidArguments :: IO ()
-printInvalidArguments = do
-    putStrLn "Invalid arguments. Please use -h or --help for more information."
-    exitFailure
+pOutputBinary :: Parser OutputType
+pOutputBinary =
+    flag'
+        OutputBinary
+        ( long "bin"
+            <> short 'b'
+            <> help "Generate fxTap's binary format"
+        )
 
-main :: IO ()
-main = do
-    args <- getArgs
-    setLocaleEncoding utf8
+pOutputCHeader :: Parser OutputType
+pOutputCHeader =
+    OutputC
+        <$> strOption
+            ( long "c"
+                <> short 'c'
+                <> metavar "IDENTIFIER"
+                <> help "Generate a C and a header file with the beatmap hardcoded, identified by a specified name"
+            )
 
-    case args of
-        ["-v"] -> printVersion
-        ["--version"] -> printVersion
-        ["-h"] -> printHelp
-        ["--help"] -> printHelp
+pOutputType :: Parser OutputType
+pOutputType = pOutputBinary <|> pOutputCHeader
 
-        ["-ch", symbolName, inputPath] ->
-            rock (OutputCHeader symbolName) inputPath Nothing
+pInputPath :: Parser FilePath
+pInputPath = strOption (long "input" <> short 'i' <> metavar "PATH" <> help "Path to the beatmap to be converted")
 
-        ["-ch", symbolName, inputPath, outputFileName] ->
-            rock (OutputCHeader symbolName) inputPath (Just outputFileName)
+pOutputPath :: Parser (Maybe FilePath)
+pOutputPath = optional (strOption (long "output" <> short 'o' <> metavar "PATH" <> help "Output path"))
 
-        [inputPath] ->
-            rock OutputBinary inputPath Nothing
+pVersion :: Parser FxTapArgs
+pVersion = flag' FxTapVersion (long "version" <> short 'v' <> help "Show version")
 
-        [inputPath, outputFileName] ->
-            rock OutputBinary inputPath (Just outputFileName)
+pMain :: Parser FxTapArgs
+pMain = FxTapMain <$> pOutputType <*> pInputPath <*> pOutputPath
 
-        _ -> printInvalidArguments
+pArgs :: Parser FxTapArgs
+pArgs = pMain <|> pVersion
+
+red :: String -> String
+red x = "\x1b[31m" ++ x ++ "\x1b[0m"
+
+yellow :: String -> String
+yellow x = "\x1b[33m" ++ x ++ "\x1b[0m"
