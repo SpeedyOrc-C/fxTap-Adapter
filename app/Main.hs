@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Main where
 
 import Data.ByteString.Lazy qualified as BL
@@ -6,7 +8,13 @@ import Control.Applicative (Alternative ((<|>)), optional, (<**>))
 import Control.Monad (when)
 import Data.Aeson (decode)
 import Data.Beatmap.FxTap (FxTapCompatible (toFxTap), toFxTap)
-import Data.Beatmap.FxTap.Checker (Explain (..), FxTapMessage (..), fxTapChecker, isError, runChecker)
+import Data.Beatmap.FxTap.Checker (
+    Explain (..),
+    FxTapMessage (..),
+    fxTapChecker,
+    isError,
+    runChecker,
+ )
 import Data.Beatmap.FxTap.Put (putFxTapBinary, putFxTapCHeader)
 import Data.Beatmap.Malody (Malody)
 import Data.Beatmap.Osu.Parser (parserOsu)
@@ -14,9 +22,11 @@ import Data.Binary.Put (runPut)
 import Data.Char (toLower)
 import Data.Foldable (for_, traverse_)
 import Data.Maybe (fromMaybe)
+import GHC.ByteOrder (ByteOrder (BigEndian, LittleEndian))
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Options.Applicative (
     Parser,
+    eitherReader,
     execParser,
     flag',
     fullDesc,
@@ -25,8 +35,9 @@ import Options.Applicative (
     info,
     long,
     metavar,
+    option,
     short,
-    strOption,
+    strOption, completeWith,
  )
 import System.Exit (exitFailure, exitSuccess)
 import System.FilePath (dropExtension, takeExtension)
@@ -40,7 +51,7 @@ data FxTapArgs
         }
     | FxTapVersion
 
-data OutputType = OutputBinary | OutputC String
+data OutputType = OutputBinary ByteOrder | OutputC String
 
 main :: IO ()
 main = do
@@ -78,7 +89,7 @@ _main (FxTapMain{outputType, inputPath, outputPath}) = do
                 >> exitFailure
         Right fxTap -> do
             let extension = case outputType of
-                    OutputBinary -> ".fxt"
+                    OutputBinary{} -> ".fxt"
                     OutputC{} -> ".fxt.h"
 
             let defaultOutputPath = dropExtension inputPath
@@ -94,10 +105,16 @@ _main (FxTapMain{outputType, inputPath, outputPath}) = do
             when (any isError messages) exitFailure
 
             BL.writeFile outputPath' . runPut $ case outputType of
-                OutputBinary -> putFxTapBinary fxTap
+                OutputBinary byteOrder -> putFxTapBinary byteOrder fxTap
                 OutputC symbolName -> putFxTapCHeader symbolName fxTap
 
             exitSuccess
+  where
+    red :: String -> String
+    red x = "\x1b[31m" ++ x ++ "\x1b[0m"
+
+    yellow :: String -> String
+    yellow x = "\x1b[33m" ++ x ++ "\x1b[0m"
 
 printVersion :: IO ()
 printVersion = putStrLn "fxTap Adapter 0.5.0.0"
@@ -105,45 +122,64 @@ printVersion = putStrLn "fxTap Adapter 0.5.0.0"
 getConfig :: IO FxTapArgs
 getConfig = execParser (info (pArgs <**> helper) fullDesc)
 
-pOutputBinary :: Parser OutputType
-pOutputBinary =
-    flag'
+pArgs :: Parser FxTapArgs
+pArgs =
+    pMain <|> pVersion
+  where
+    pOutputBinary =
         OutputBinary
-        ( long "bin"
-            <> short 'b'
-            <> help "Generate fxTap's binary format"
-        )
+            <$> pEndian
+                ( long "bin"
+                    <> short 'b'
+                    <> metavar "big|little"
+                    <> completeWith ["big", "casio", "little", "windows", "macos", "linux"]
+                    <> help "Generate a binary file with specified endianness."
+                )
+      where
+        pEndian = option . eitherReader $ \case
+            "b" -> Right BigEndian
+            "big" -> Right BigEndian
+            "casio" -> Right BigEndian
+            "l" -> Right LittleEndian
+            "little" -> Right LittleEndian
+            "windows" -> Right LittleEndian
+            "macos" -> Right LittleEndian
+            "linux" -> Right LittleEndian
+            _ -> Left "Invalid endianness"
 
-pOutputCHeader :: Parser OutputType
-pOutputCHeader =
-    OutputC
-        <$> strOption
+    pOutputCHeader =
+        fmap OutputC . strOption $
             ( long "c"
                 <> short 'c'
                 <> metavar "IDENTIFIER"
                 <> help "Generate a C and a header file with the beatmap hardcoded, identified by a specified name"
             )
 
-pOutputType :: Parser OutputType
-pOutputType = pOutputBinary <|> pOutputCHeader
+    pOutputType = pOutputBinary <|> pOutputCHeader
 
-pInputPath :: Parser FilePath
-pInputPath = strOption (long "input" <> short 'i' <> metavar "PATH" <> help "Path to the beatmap to be converted")
+    pInputPath =
+        strOption
+            ( long "input"
+                <> short 'i'
+                <> metavar "PATH"
+                <> help "Path to the beatmap to be converted"
+            )
 
-pOutputPath :: Parser (Maybe FilePath)
-pOutputPath = optional (strOption (long "output" <> short 'o' <> metavar "PATH" <> help "Output path"))
+    pOutputPath =
+        optional . strOption $
+            ( long "output"
+                <> short 'o'
+                <> metavar "PATH"
+                <> help "Output path"
+            )
 
-pVersion :: Parser FxTapArgs
-pVersion = flag' FxTapVersion (long "version" <> short 'v' <> help "Show version")
+    pVersion =
+        flag'
+            FxTapVersion
+            ( long "version"
+                <> short 'v'
+                <> help "Show version"
+            )
 
-pMain :: Parser FxTapArgs
-pMain = FxTapMain <$> pOutputType <*> pInputPath <*> pOutputPath
-
-pArgs :: Parser FxTapArgs
-pArgs = pMain <|> pVersion
-
-red :: String -> String
-red x = "\x1b[31m" ++ x ++ "\x1b[0m"
-
-yellow :: String -> String
-yellow x = "\x1b[33m" ++ x ++ "\x1b[0m"
+    pMain :: Parser FxTapArgs
+    pMain = FxTapMain <$> pOutputType <*> pInputPath <*> pOutputPath
