@@ -28,7 +28,7 @@ And the executable named `fxta` will be installed to Cabal's folder.
 
 ### Run
 
-Convert `a.osu` to `b.fxt` in binary for CASIO calculator (little endian):
+Convert `a.osu` to `b.fxt` in binary for CASIO calculator (big endian):
 
 ```sh
 fxta -b casio -i a.osu -o b.fxt
