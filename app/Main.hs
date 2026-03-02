@@ -26,6 +26,7 @@ import GHC.ByteOrder (ByteOrder (BigEndian, LittleEndian))
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import Options.Applicative (
     Parser,
+    completeWith,
     eitherReader,
     execParser,
     flag',
@@ -37,7 +38,7 @@ import Options.Applicative (
     metavar,
     option,
     short,
-    strOption, completeWith,
+    strOption,
  )
 import System.Exit (exitFailure, exitSuccess)
 import System.FilePath (dropExtension, takeExtension)

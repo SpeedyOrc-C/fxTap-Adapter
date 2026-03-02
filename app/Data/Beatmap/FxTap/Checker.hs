@@ -9,64 +9,65 @@ import Data.Beatmap.FxTap (FxTap (..), Note (..))
 data FxTapWarning
     = TitleTrimmed
     | ArtistTrimmed
-    | OverlappedHold {
-        overlappedColumnIndex :: Integer,
-        overlappedHoldIndex :: Integer,
-        overlappedNotesCount :: Integer
-    }
-    deriving Show
+    | OverlappedHold
+        { overlappedColumnIndex :: Integer
+        , overlappedHoldIndex :: Integer
+        , overlappedNotesCount :: Integer
+        }
+    deriving (Show)
 
 data FxTapError
-    = NoteIntervalTooLarge {
-        overflowColumnIndex :: Integer,
-        overflowNoteIndex :: Integer,
-        overflowedValue :: Integer
-    }
-    | HoldDurationTooLarge {
-        overflowColumnIndex :: Integer,
-        overflowNoteIndex :: Integer,
-        overflowedValue :: Integer
-    }
-    deriving Show
+    = NoteIntervalTooLarge
+        { overflowColumnIndex :: Integer
+        , overflowNoteIndex :: Integer
+        , overflowedValue :: Integer
+        }
+    | HoldDurationTooLarge
+        { overflowColumnIndex :: Integer
+        , overflowNoteIndex :: Integer
+        , overflowedValue :: Integer
+        }
+    deriving (Show)
 
 data FxTapMessage
     = FxTapWarning FxTapWarning
     | FxTapError FxTapError
-    deriving Show
+    deriving (Show)
 
 newtype FxTapChecker = FxTapChecker (FxTap -> [FxTapMessage])
 
 titleChecker :: FxTapChecker
-titleChecker = FxTapChecker $ \FxTap {title} ->
+titleChecker = FxTapChecker $ \FxTap{title} ->
     [FxTapWarning TitleTrimmed | length title > 255]
 
 artistChecker :: FxTapChecker
-artistChecker = FxTapChecker $ \FxTap {artist} ->
+artistChecker = FxTapChecker $ \FxTap{artist} ->
     [FxTapWarning ArtistTrimmed | length artist > 255]
 
 columnOverlapChecker :: [(Integer, Note)] -> [(Integer, Integer)]
 columnOverlapChecker [] = []
-columnOverlapChecker ((_, Tap {}):notes) = columnOverlapChecker notes
-columnOverlapChecker ((noteIndex, Hold {duration}):notes) =
+columnOverlapChecker ((_, Tap{}) : notes) = columnOverlapChecker notes
+columnOverlapChecker ((noteIndex, Hold{duration}) : notes) =
     if overlappedNotesCount == 0
         then columnOverlapChecker notes
         else (noteIndex, overlappedNotesCount) : columnOverlapChecker notes
-    where
-    overlappedNotesCount = notes
-        -- Get following notes' accumulated start time
-        & map (accumulatedStartTime . snd)
-        -- Calculate the time difference
-        -- between this hold note and the following notes
-        & scanl1 (+)
-        -- Find the overlapped notes
-        & takeWhile (<= duration)
-        -- Count how many are there
-        & fromIntegral . length
+  where
+    overlappedNotesCount =
+        notes
+            -- Get following notes' accumulated start time
+            & map (accumulatedStartTime . snd)
+            -- Calculate the time difference
+            -- between this hold note and the following notes
+            & scanl1 (+)
+            -- Find the overlapped notes
+            & takeWhile (<= duration)
+            -- Count how many are there
+            & fromIntegral . length
 
 overlapChecker :: FxTapChecker
-overlapChecker = FxTapChecker $ \FxTap {noteColumns} -> do
-    (columnIndex, notes) <- zip [0..] noteColumns
-    (holdIndex, overlapCount) <- columnOverlapChecker (zip [0..] notes)
+overlapChecker = FxTapChecker $ \FxTap{noteColumns} -> do
+    (columnIndex, notes) <- zip [0 ..] noteColumns
+    (holdIndex, overlapCount) <- columnOverlapChecker (zip [0 ..] notes)
 
     return $ FxTapWarning $ OverlappedHold columnIndex holdIndex overlapCount
 
@@ -74,41 +75,45 @@ u16UpperBound :: Integer
 u16UpperBound = (2 :: Integer) ^ (16 :: Integer) - 1
 
 intervalOverflowChecker :: FxTapChecker
-intervalOverflowChecker =  FxTapChecker $ \FxTap {noteColumns} -> do
-    (columnIndex, notes) <- zip [0..] noteColumns
-    (noteIndex, note) <- zip [0..] notes
+intervalOverflowChecker = FxTapChecker $ \FxTap{noteColumns} -> do
+    (columnIndex, notes) <- zip [0 ..] noteColumns
+    (noteIndex, note) <- zip [0 ..] notes
 
-    [FxTapError $
+    [ FxTapError $
         NoteIntervalTooLarge columnIndex noteIndex (accumulatedStartTime note)
-        | accumulatedStartTime note > u16UpperBound]
+      | accumulatedStartTime note > u16UpperBound
+      ]
 
 durationOverflowChecker :: FxTapChecker
-durationOverflowChecker =  FxTapChecker $ \FxTap {noteColumns} -> do
-    (columnIndex, notes) <- zip [0..] noteColumns
-    (noteIndex, note) <- zip [0..] notes
+durationOverflowChecker = FxTapChecker $ \FxTap{noteColumns} -> do
+    (columnIndex, notes) <- zip [0 ..] noteColumns
+    (noteIndex, note) <- zip [0 ..] notes
 
-    [FxTapError $
+    [ FxTapError $
         HoldDurationTooLarge columnIndex noteIndex (duration note)
-        | isHold note, duration note > u16UpperBound]
+      | isHold note
+      , duration note > u16UpperBound
+      ]
 
 fxTapChecker :: FxTapChecker
-fxTapChecker = mconcat
-    [ titleChecker
-    , artistChecker
-    , overlapChecker
-    , intervalOverflowChecker
-    , durationOverflowChecker
-    ]
+fxTapChecker =
+    mconcat
+        [ titleChecker
+        , artistChecker
+        , overlapChecker
+        , intervalOverflowChecker
+        , durationOverflowChecker
+        ]
 
 runChecker :: FxTapChecker -> FxTap -> [FxTapMessage]
 runChecker (FxTapChecker f) = f
 
 isError :: FxTapMessage -> Bool
-isError FxTapError {} = True
+isError FxTapError{} = True
 isError _ = False
 
 isHold :: Note -> Bool
-isHold Hold {} = True
+isHold Hold{} = True
 isHold _ = False
 
 class Explain a where
@@ -120,24 +125,33 @@ instance Explain FxTapWarning where
         "Title is too long to fit in, only 31 characters are kept."
     explain ArtistTrimmed =
         "Artist is too long to fit in, only 31 characters are kept."
-    explain OverlappedHold {..} =
-        "The #" ++ show (overlappedHoldIndex + 1) ++
-        " note in column #" ++ show (overlappedColumnIndex + 1) ++
-        " overlaps with the following " ++ show overlappedNotesCount ++
-        " notes."
+    explain OverlappedHold{..} =
+        "The #"
+            ++ show (overlappedHoldIndex + 1)
+            ++ " note in column #"
+            ++ show (overlappedColumnIndex + 1)
+            ++ " overlaps with the following "
+            ++ show overlappedNotesCount
+            ++ " notes."
 
 instance Explain FxTapError where
     explain :: FxTapError -> String
-    explain NoteIntervalTooLarge {..} =
-        "The #" ++ show (overflowNoteIndex + 1) ++
-        " note in column #" ++ show (overflowColumnIndex + 1) ++
-        " has an interval of " ++ show overflowedValue ++
-        " which is too large."
-    explain HoldDurationTooLarge {..} =
-        "The #" ++ show (overflowNoteIndex + 1) ++
-        " hold note in column #" ++ show (overflowColumnIndex + 1) ++
-        " has a duration of " ++ show overflowedValue ++
-        " which is too large."
+    explain NoteIntervalTooLarge{..} =
+        "The #"
+            ++ show (overflowNoteIndex + 1)
+            ++ " note in column #"
+            ++ show (overflowColumnIndex + 1)
+            ++ " has an interval of "
+            ++ show overflowedValue
+            ++ " which is too large."
+    explain HoldDurationTooLarge{..} =
+        "The #"
+            ++ show (overflowNoteIndex + 1)
+            ++ " hold note in column #"
+            ++ show (overflowColumnIndex + 1)
+            ++ " has a duration of "
+            ++ show overflowedValue
+            ++ " which is too large."
 
 instance Explain FxTapMessage where
     explain :: FxTapMessage -> String
