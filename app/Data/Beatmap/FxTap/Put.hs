@@ -24,11 +24,13 @@ putFxTapBinary bo FxTap{..} = do
 
     putDouble overallDifficulty
 
-    putInt8 (fromIntegral (length title))
-    putStringUtf8 title
+    let title' = take 255 title
+    putInt8 (fromIntegral (length title'))
+    putStringUtf8 title'
 
-    putInt8 (fromIntegral (length artist))
-    putStringUtf8 artist
+    let artist' = take 255 artist
+    putInt8 (fromIntegral (length artist'))
+    putStringUtf8 artist'
 
     putInt8 (fromIntegral (length noteColumns))
     for_ noteColumns $ \notesColumn ->

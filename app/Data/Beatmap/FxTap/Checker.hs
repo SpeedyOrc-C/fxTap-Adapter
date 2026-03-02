@@ -38,11 +38,11 @@ newtype FxTapChecker = FxTapChecker (FxTap -> [FxTapMessage])
 
 titleChecker :: FxTapChecker
 titleChecker = FxTapChecker $ \FxTap {title} ->
-    [FxTapWarning TitleTrimmed | length title > 31]
+    [FxTapWarning TitleTrimmed | length title > 255]
 
 artistChecker :: FxTapChecker
 artistChecker = FxTapChecker $ \FxTap {artist} ->
-    [FxTapWarning ArtistTrimmed | length artist > 31]
+    [FxTapWarning ArtistTrimmed | length artist > 255]
 
 columnOverlapChecker :: [(Integer, Note)] -> [(Integer, Integer)]
 columnOverlapChecker [] = []
