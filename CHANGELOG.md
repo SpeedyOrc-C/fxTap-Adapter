@@ -1,5 +1,12 @@
 # Revision history for fxTap-Adapter
 
+## 1.0.0.0 -- 2026-03-05
+
+### Feature
+
+* Redesigned file format. Title and artist now have variable length up to 255 characters.
+* Support big/little endian output.
+
 ## 0.4.0.1 -- 2024-10-02
 
 ### Feature
