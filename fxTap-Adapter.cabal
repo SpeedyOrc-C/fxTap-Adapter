@@ -69,6 +69,7 @@ executable fxta
         , Data.Beatmap.Malody
         , Data.Beatmap.FxTap
         , Data.Beatmap.FxTap.Checker
+        , Data.Beatmap.FxTap.Example
         , Data.Beatmap.FxTap.Put
 
     -- LANGUAGE extensions used by modules in this package.
