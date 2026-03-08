@@ -60,7 +60,7 @@ main = do
     getConfig >>= _main
 
 _main :: FxTapArgs -> IO ()
-_main FxTapVersion = putStrLn "0.5.0.0"
+_main FxTapVersion = putStrLn "1.0.1.0"
 _main (FxTapMain{outputType, inputPath, outputPath}) = do
     result <- case map toLower (takeExtension inputPath) of
         ".osu" -> do
@@ -116,9 +116,6 @@ _main (FxTapMain{outputType, inputPath, outputPath}) = do
 
     yellow :: String -> String
     yellow x = "\x1b[33m" ++ x ++ "\x1b[0m"
-
-printVersion :: IO ()
-printVersion = putStrLn "fxTap Adapter 0.5.0.0"
 
 getConfig :: IO FxTapArgs
 getConfig = execParser (info (pArgs <**> helper) fullDesc)
