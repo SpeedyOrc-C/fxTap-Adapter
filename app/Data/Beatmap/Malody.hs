@@ -96,18 +96,18 @@ instance FromJSON Event where
             <$> fmap malodyBeatToRational (o .: "beat")
             <*> fmap malodyBeatToRational (o .: "endbeat")
             <*> o .: "column"
-            <*> (o .: "style" <|> return 0)
-            <*> (o .: "hits" <|> return 1)
+            <*> (o .: "style" <|> pure 0)
+            <*> (o .: "hits" <|> pure 1)
             <|> Sound
                 <$> fmap malodyBeatToRational (o .: "beat")
                 <*> o .: "sound"
-                <*> (o .: "vol" <|> return 100)
-                <*> o .: "offset"
+                <*> (o .: "vol" <|> pure 100)
+                <*> (o .: "offset" <|> pure 0)
                 <*> o .: "type"
             <|> Tap
                 <$> fmap malodyBeatToRational (o .: "beat")
                 <*> o .: "column"
-                <*> (o .: "style" <|> return 0)
+                <*> (o .: "style" <|> pure 0)
 
 instance FromJSON Song where
     parseJSON :: Value -> Parser Song
