@@ -1,5 +1,15 @@
 # Revision history for fxTap-Adapter
 
+## 1.0.1.0 -- 2026-03-08
+
+### Feature
+
+* Show detailed error messages from Malody.
+
+### Bugfix
+
+* Incorrectly parsing Malody (sound offset has a default value).
+
 ## 1.0.0.0 -- 2026-03-05
 
 ### Feature
