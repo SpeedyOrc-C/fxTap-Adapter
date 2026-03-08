@@ -6,7 +6,7 @@ import Data.ByteString.Lazy qualified as BL
 
 import Control.Applicative (Alternative ((<|>)), optional, (<**>))
 import Control.Monad (when)
-import Data.Aeson (decode)
+import Data.Aeson (eitherDecode)
 import Data.Beatmap.FxTap (FxTapCompatible (toFxTap), toFxTap)
 import Data.Beatmap.FxTap.Checker (
     Explain (..),
@@ -70,9 +70,9 @@ _main (FxTapMain{outputType, inputPath, outputPath}) = do
                 Right osu -> Right (toFxTap osu)
         ".mc" -> do
             raw <- BL.readFile inputPath
-            return $ case decode raw :: Maybe Malody of
-                Nothing -> Left "Cannot parse this Malody beatmap."
-                Just malody -> Right (toFxTap malody)
+            return $ case eitherDecode raw :: Either String Malody of
+                Left error' -> Left (show error')
+                Right malody -> Right (toFxTap malody)
         "" -> return $ Left "No extension found, cannot determine the file type."
         '.' : extension -> return $ Left $ "Not supported extension " ++ extension ++ "."
         _ -> error "Unreachable"
