@@ -329,7 +329,7 @@ pEvent =
                 Break
                 <$> pInteger <* char ','
                 <*> pInteger
-            _ -> error "Not implemented event type."
+            _ -> error ("Not implemented event type: " ++ show type')
 
 pEventVideo :: Parser Event
 pEventVideo = do
