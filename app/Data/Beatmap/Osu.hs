@@ -119,6 +119,7 @@ data Event
         , fileNameEvent :: String
         , volume :: Integer
         }
+    | Verbatim String
     deriving (Show)
 
 data Effects = Effects
@@ -139,7 +140,8 @@ data TimingPoint = TimingPoint
     }
     deriving (Show)
 
-data Colour = Colour Integer Integer Integer
+-- FIXME)) v128 has alpha channel (4th integer)
+data Colour = Colour Integer Integer Integer Integer
     deriving (Show)
 
 data Colours = Colours

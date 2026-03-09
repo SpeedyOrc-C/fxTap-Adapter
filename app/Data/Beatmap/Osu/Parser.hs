@@ -3,11 +3,12 @@ module Data.Beatmap.Osu.Parser where
 import Data.Map qualified as M
 import Data.Bits ( Bits((.&.), shift) )
 import Data.Functor ( (<&>), void )
-import Text.Parsec (noneOf, char, string, Parsec, digit, (<|>), try, eof)
+import Text.Parsec (noneOf, char, string, Parsec, digit, (<|>), try, eof, oneOf)
 import Text.Parsec.Combinator (sepBy)
-import Control.Applicative ( Alternative(empty, some, many), asum )
+import Control.Applicative ( Alternative(empty, some, many), asum, optional )
 
 import Data.Beatmap.Osu
+import Data.Maybe (fromMaybe)
 
 b :: Integer -> Integer -> Bool
 b bitNumber number = number .&. (2^bitNumber) /= 0
@@ -64,9 +65,7 @@ pKv key pValue = do
 pSectionTitle :: String -> Parser ()
 pSectionTitle title = do
     void $ char '['
-    void . many $ pWhite
     void $ string title
-    void . many $ pWhite
     void $ char ']'
     pLineSeparator
 
@@ -293,7 +292,7 @@ pTimingPoints = do
 
 pHeader :: Parser ()
 pHeader = do
-    void $ string "osu file format v14"
+    void $ string "osu file format v1" <* (string "4" <|> string "28")
     pLineSeparator
 
 pStringInList :: Parser String
@@ -309,27 +308,32 @@ pOptionalOffset =
     ((,) <$> (char ',' *> pInteger) <*> (char ',' *> pInteger))
     <|> return (0, 0)
 
+-- FIXME)) v128 stop parsing these events
+pEventVerbatim :: Parser Event
+pEventVerbatim = do
+    c <- oneOf "356"
+    tail' <- many (noneOf "\n\r")
+    pure (Verbatim (c : tail'))
+
 pEvent :: Parser Event
 pEvent =
         pEventVideo
     <|> pEventAudioSample
     <|> do
-        type' <- pInteger <* char ','
-        case type' of
-            0 -> string "0," *>
+        asum
+            [ string "0,0," *>
                 (Background
                 <$> pStringInList
                 <*> pOptionalOffset)
-            1 ->
-                Video
+            , string "1," *> (Video
                 <$> pInteger <* char ','
                 <*> pStringInList
-                <*> pOptionalOffset
-            2 ->
-                Break
+                <*> pOptionalOffset)
+            , string "2," *> (Break
                 <$> pInteger <* char ','
-                <*> pInteger
-            _ -> error ("Not implemented event type: " ++ show type')
+                <*> pInteger)
+            , pEventVerbatim
+            ]
 
 pEventVideo :: Parser Event
 pEventVideo = do
@@ -361,13 +365,14 @@ pColour = Colour
     <$> pInteger <* char ','
     <*> pInteger <* char ','
     <*> pInteger
+    <*> (fromMaybe 255 <$> optional (char ',' *> pInteger))
 
 pComboColour :: Parser (Integer, Colour)
 pComboColour = do
     n <- string "Combo" *> pInteger
-    pWhite
+    void $ many pWhite
     void $ char ':'
-    pWhite
+    void $ many pWhite
     colour <- pColour
     pLineSeparator
 
@@ -391,6 +396,6 @@ parserOsu = do
         <*> pDifficulty
         <*> pEvents
         <*> pTimingPoints
-        <*> (try (Just <$> pColours) <|> return Nothing)
+        <*> try (optional pColours)
         <*> pHitObjects
         <* eof
