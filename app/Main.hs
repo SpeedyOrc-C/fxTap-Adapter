@@ -60,7 +60,7 @@ main = do
     getConfig >>= _main
 
 _main :: FxTapArgs -> IO ()
-_main FxTapVersion = putStrLn "1.0.1.0"
+_main FxTapVersion = putStrLn "1.0.1.1"
 _main (FxTapMain{outputType, inputPath, outputPath}) = do
     result <- case map toLower (takeExtension inputPath) of
         ".osu" -> do

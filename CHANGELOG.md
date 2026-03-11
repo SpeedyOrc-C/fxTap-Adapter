@@ -1,5 +1,15 @@
 # Revision history for fxTap-Adapter
 
+## 1.0.1.1 -- 2026-03-11
+
+### Feature
+
+* Improve osu's error message.
+
+### Bugfix
+
+* Showing wrong version number
+
 ## 1.0.1.0 -- 2026-03-08
 
 ### Feature
