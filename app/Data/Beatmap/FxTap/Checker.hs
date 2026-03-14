@@ -2,9 +2,8 @@
 
 module Data.Beatmap.FxTap.Checker where
 
-import Data.Function ((&))
-
 import Data.Beatmap.FxTap (FxTap (..), Note (..))
+import Data.Function ((&))
 
 data FxTapWarning
     = TitleTrimmed
@@ -91,9 +90,11 @@ durationOverflowChecker = FxTapChecker $ \FxTap{noteColumns} -> do
 
     [ FxTapError $
         HoldDurationTooLarge columnIndex noteIndex (duration note)
-      | isHold note
-      , duration note > u16UpperBound
+      | hasError note
       ]
+  where
+    hasError (Hold{duration}) = duration > u16UpperBound
+    hasError _ = False
 
 fxTapChecker :: FxTapChecker
 fxTapChecker =
@@ -108,13 +109,12 @@ fxTapChecker =
 runChecker :: FxTapChecker -> FxTap -> [FxTapMessage]
 runChecker (FxTapChecker f) = f
 
+checkFxTap :: FxTap -> [FxTapMessage]
+checkFxTap = runChecker fxTapChecker
+
 isError :: FxTapMessage -> Bool
 isError FxTapError{} = True
 isError _ = False
-
-isHold :: Note -> Bool
-isHold Hold{} = True
-isHold _ = False
 
 class Explain a where
     explain :: a -> String

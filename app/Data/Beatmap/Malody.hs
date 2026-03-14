@@ -6,17 +6,17 @@ module Data.Beatmap.Malody where
 import Control.Applicative (Alternative (empty, (<|>)))
 import Control.Arrow ((>>>))
 import Control.Monad.State (MonadState (get, put), State, evalState)
-import Data.Aeson (FromJSON (parseJSON), Value, withArray, withObject, (.:))
+import Data.Aeson (FromJSON (parseJSON), Value, eitherDecode, withArray, withObject, (.:))
 import Data.Aeson.Types (Parser)
+import Data.Beatmap.FxTap (FxTapCompatible (..))
+import Data.Beatmap.IR (INote, INoteCompatible (..))
+import Data.Beatmap.IR qualified as IR
+import Data.ByteString.Lazy (ByteString)
 import Data.Function (on, (&))
 import Data.List (groupBy, sortOn)
 import Data.Maybe (catMaybes)
 import Data.Ratio ((%))
 import Data.Vector qualified as V
-
-import Data.Beatmap.FxTap (FxTapCompatible (..))
-import Data.Beatmap.IR (INote, INoteCompatible (..))
-import Data.Beatmap.IR qualified as IR
 
 data Song = Song
     { title :: String
@@ -72,6 +72,9 @@ data Malody = Malody
     , events :: [Event]
     }
     deriving (Show)
+
+parseMalody :: ByteString -> Either String Malody
+parseMalody = eitherDecode
 
 instance FromJSON MalodyBeat where
     parseJSON :: Value -> Parser MalodyBeat

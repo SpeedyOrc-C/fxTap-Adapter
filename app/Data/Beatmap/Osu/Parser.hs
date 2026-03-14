@@ -1,17 +1,17 @@
 module Data.Beatmap.Osu.Parser where
 
-import Data.Map qualified as M
-import Data.Bits ( Bits((.&.), shift) )
-import Data.Functor ( (<&>), void )
-import Text.Parsec (noneOf, char, string, Parsec, digit, (<|>), try, eof, oneOf)
-import Text.Parsec.Combinator (sepBy)
-import Control.Applicative ( Alternative(empty, some, many), asum, optional )
-
+import Control.Applicative (Alternative (empty, many, some), asum, optional)
 import Data.Beatmap.Osu
+import Data.Bits (Bits (shift, (.&.)))
+import Data.Functor (void, (<&>))
+import Data.Map qualified as M
 import Data.Maybe (fromMaybe)
+import Text.Parsec (Parsec, char, digit, eof, noneOf, oneOf, parse, string, try, (<|>))
+import Text.Parsec.Combinator (sepBy)
+import Text.Parsec.Error (ParseError)
 
 b :: Integer -> Integer -> Bool
-b bitNumber number = number .&. (2^bitNumber) /= 0
+b bitNumber number = number .&. (2 ^ bitNumber) /= 0
 
 type Parser a = Parsec String () a
 
@@ -84,11 +84,15 @@ pCountdown = do
         _ -> empty
 
 pSampleSet :: Parser (Maybe SampleSet)
-pSampleSet = do
+pSampleSet =
+    do
         Nothing <$ try (string "None")
-    <|> Just SampleSetNormal <$ try (string "Normal")
-    <|> Just SampleSetDrum <$ string "Drum"
-    <|> Just SampleSetSoft <$ string "Soft"
+        <|> Just SampleSetNormal
+        <$ try (string "Normal")
+            <|> Just SampleSetDrum
+        <$ string "Drum"
+            <|> Just SampleSetSoft
+        <$ string "Soft"
 
 pMode :: Parser Mode
 pMode = do
@@ -102,9 +106,12 @@ pMode = do
 
 pOverlayPosition :: Parser OverlayPosition
 pOverlayPosition =
-        OverlayPositionNoChange <$ string "NoChange"
-    <|> OverlayPositionBelow <$ string "Below"
-    <|> OverlayPositionAbove <$ string "Above"
+    OverlayPositionNoChange
+        <$ string "NoChange"
+            <|> OverlayPositionBelow
+        <$ string "Below"
+            <|> OverlayPositionAbove
+        <$ string "Above"
 
 pGeneral :: Parser General
 pGeneral = do
@@ -138,27 +145,43 @@ pEditor = do
         <*> pKv "TimelineZoom" pDouble
 
 pType :: Parser Type
-pType = pInteger <&>
-    \i -> Type (b 0 i) (b 1 i) (b 2 i) (b 3 i)
-        (shift i (-3) .&. (1 + 2 + 4)) (b 7 i)
+pType =
+    pInteger
+        <&> \i ->
+            Type
+                (b 0 i)
+                (b 1 i)
+                (b 2 i)
+                (b 3 i)
+                (shift i (-3) .&. (1 + 2 + 4))
+                (b 7 i)
 
 pHitSound :: Parser HitSound
 pHitSound = pInteger <&> \i -> HitSound (b 0 i) (b 1 i) (b 2 i) (b 3 i)
 
 pMaybeSampleSet :: Parser (Maybe SampleSet)
-pMaybeSampleSet = do
+pMaybeSampleSet =
+    do
         Nothing <$ char '0'
-    <|> Just SampleSetNormal <$ char '1'
-    <|> Just SampleSetSoft <$ char '2'
-    <|> Just SampleSetDrum <$ char '3'
+        <|> Just SampleSetNormal
+        <$ char '1'
+            <|> Just SampleSetSoft
+        <$ char '2'
+            <|> Just SampleSetDrum
+        <$ char '3'
 
 pHitSample :: Parser HitSample
-pHitSample = HitSample
-    <$> pMaybeSampleSet <* char ':'
-    <*> pMaybeSampleSet <* char ':'
-    <*> pInteger <* char ':'
-    <*> pInteger <* char ':'
-    <*> pString
+pHitSample =
+    HitSample
+        <$> pMaybeSampleSet
+        <* char ':'
+        <*> pMaybeSampleSet
+        <* char ':'
+        <*> pInteger
+        <* char ':'
+        <*> pInteger
+        <* char ':'
+        <*> pString
 
 pHitSampleOptionalHitCircle :: Parser HitSample
 pHitSampleOptionalHitCircle =
@@ -169,12 +192,13 @@ pHitSampleOptionalHold =
     (char ':' *> pHitSample) <|> return (HitSample Nothing Nothing 0 0 "")
 
 pSliderCurveType :: Parser SliderCurveType
-pSliderCurveType = asum
-    [ Bezier <$ char 'B'
-    , CentripetalCatmullRom <$ char 'C'
-    , Linear <$ char 'L'
-    , PerfectCircle <$ char 'P'
-    ]
+pSliderCurveType =
+    asum
+        [ Bezier <$ char 'B'
+        , CentripetalCatmullRom <$ char 'C'
+        , Linear <$ char 'L'
+        , PerfectCircle <$ char 'P'
+        ]
 
 pSliderCurvePoint :: Parser (Integer, Integer)
 pSliderCurvePoint = do
@@ -198,34 +222,36 @@ pHitObject = do
     type' <- pType <* char ','
     hitSound <- pHitSound
 
-    if isHitCircle type' then
-        HitObjectCircle x y time hitSound
-            <$> pHitSampleOptionalHitCircle
-
-    else if isHold type' then do
-        void $ char ','
-        endTime <- pInteger
-        HitObjectHold x y time hitSound endTime
-            <$> pHitSampleOptionalHold
-
-    else if isSlider type' then do
-        void $ char ','
-        curveType <- pSliderCurveType
-        curvePoints <- many pSliderCurvePoint
-        void $ char ','
-        slides <- pInteger
-        void $ char ','
-        sliderLength <- pDouble
-        void $ char ','
-        edgeSounds <- pPipeList pInteger
-        void $ char ','
-        edgeSets <- pPipeList ((,) <$> pHitSound <*> (char ':' *> pHitSound))
-        void $ char ','
-        HitObjectSlider x y time hitSound curveType curvePoints slides sliderLength edgeSounds edgeSets
-            <$> pHitSample
-
-    else
-        fail $ "Unexpected hit object type: " ++ show type'
+    if isHitCircle type'
+        then
+            HitObjectCircle x y time hitSound
+                <$> pHitSampleOptionalHitCircle
+        else
+            if isHold type'
+                then do
+                    void $ char ','
+                    endTime <- pInteger
+                    HitObjectHold x y time hitSound endTime
+                        <$> pHitSampleOptionalHold
+                else
+                    if isSlider type'
+                        then do
+                            void $ char ','
+                            curveType <- pSliderCurveType
+                            curvePoints <- many pSliderCurvePoint
+                            void $ char ','
+                            slides <- pInteger
+                            void $ char ','
+                            sliderLength <- pDouble
+                            void $ char ','
+                            edgeSounds <- pPipeList pInteger
+                            void $ char ','
+                            edgeSets <- pPipeList ((,) <$> pHitSound <*> (char ':' *> pHitSound))
+                            void $ char ','
+                            HitObjectSlider x y time hitSound curveType curvePoints slides sliderLength edgeSounds edgeSets
+                                <$> pHitSample
+                        else
+                            fail $ "Unexpected hit object type: " ++ show type'
 
 pHitObjects :: Parser [OsuHitObject]
 pHitObjects = do
@@ -269,21 +295,33 @@ pEffects = pInteger <&> \i -> Effects (b 0 i) (b 3 i)
 
 pSampleSetTimingPoint :: Parser (Maybe SampleSet)
 pSampleSetTimingPoint =
-        Nothing <$ char '0'
-    <|> Just SampleSetNormal <$ char '1'
-    <|> Just SampleSetSoft <$ char '2'
-    <|> Just SampleSetDrum <$ char '3'
+    Nothing
+        <$ char '0'
+            <|> Just SampleSetNormal
+        <$ char '1'
+            <|> Just SampleSetSoft
+        <$ char '2'
+            <|> Just SampleSetDrum
+        <$ char '3'
 
 pTimingPoint :: Parser TimingPoint
-pTimingPoint = TimingPoint
-    <$> pDouble <* char ','
-    <*> pDouble <* char ','
-    <*> pInteger <* char ','
-    <*> pSampleSetTimingPoint <* char ','
-    <*> pInteger <* char ','
-    <*> pInteger <* char ','
-    <*> pBool <* char ','
-    <*> pEffects
+pTimingPoint =
+    TimingPoint
+        <$> pDouble
+        <* char ','
+        <*> pDouble
+        <* char ','
+        <*> pInteger
+        <* char ','
+        <*> pSampleSetTimingPoint
+        <* char ','
+        <*> pInteger
+        <* char ','
+        <*> pInteger
+        <* char ','
+        <*> pBool
+        <* char ','
+        <*> pEffects
 
 pTimingPoints :: Parser [TimingPoint]
 pTimingPoints = do
@@ -298,15 +336,16 @@ pHeader = do
 pStringInList :: Parser String
 pStringInList = do
     hasQuote <- True <$ char '\"' <|> return False
-    if hasQuote then
-        many (noneOf "\"\r\n") <* char '\"'
-    else do
-        many (noneOf ",\r\n")
+    if hasQuote
+        then
+            many (noneOf "\"\r\n") <* char '\"'
+        else do
+            many (noneOf ",\r\n")
 
 pOptionalOffset :: Parser (Integer, Integer)
 pOptionalOffset =
     ((,) <$> (char ',' *> pInteger) <*> (char ',' *> pInteger))
-    <|> return (0, 0)
+        <|> return (0, 0)
 
 -- FIXME)) v128 stop parsing these events
 pEventVerbatim :: Parser Event
@@ -317,29 +356,37 @@ pEventVerbatim = do
 
 pEvent :: Parser Event
 pEvent =
-        pEventVideo
-    <|> pEventAudioSample
-    <|> do
-        asum
-            [ string "0,0," *>
-                (Background
-                <$> pStringInList
-                <*> pOptionalOffset)
-            , string "1," *> (Video
-                <$> pInteger <* char ','
-                <*> pStringInList
-                <*> pOptionalOffset)
-            , string "2," *> (Break
-                <$> pInteger <* char ','
-                <*> pInteger)
-            , pEventVerbatim
-            ]
+    pEventVideo
+        <|> pEventAudioSample
+        <|> do
+            asum
+                [ string "0,0,"
+                    *> ( Background
+                            <$> pStringInList
+                            <*> pOptionalOffset
+                       )
+                , string "1,"
+                    *> ( Video
+                            <$> pInteger
+                            <* char ','
+                            <*> pStringInList
+                            <*> pOptionalOffset
+                       )
+                , string "2,"
+                    *> ( Break
+                            <$> pInteger
+                            <* char ','
+                            <*> pInteger
+                       )
+                , pEventVerbatim
+                ]
 
 pEventVideo :: Parser Event
 pEventVideo = do
     void $ string "Video,"
     Video
-        <$> pInteger <* char ','
+        <$> pInteger
+        <* char ','
         <*> pStringInList
         <*> pOptionalOffset
 
@@ -350,8 +397,10 @@ pEventAudioSample :: Parser Event
 pEventAudioSample = do
     void $ string "Sample,"
     AudioSample
-        <$> pInteger <* char ','
-        <*> pInteger <* char ','
+        <$> pInteger
+        <* char ','
+        <*> pInteger
+        <* char ','
         <*> pString
         <*> pOptionalVolume
 
@@ -361,11 +410,14 @@ pEvents = do
     some $ pEvent <* pLineSeparator
 
 pColour :: Parser Colour
-pColour = Colour
-    <$> pInteger <* char ','
-    <*> pInteger <* char ','
-    <*> pInteger
-    <*> (fromMaybe 255 <$> optional (char ',' *> pInteger))
+pColour =
+    Colour
+        <$> pInteger
+        <* char ','
+        <*> pInteger
+        <* char ','
+        <*> pInteger
+        <*> (fromMaybe 255 <$> optional (char ',' *> pInteger))
 
 pComboColour :: Parser (Integer, Colour)
 pComboColour = do
@@ -399,3 +451,6 @@ parserOsu = do
         <*> try (optional pColours)
         <*> pHitObjects
         <* eof
+
+parseOsu :: String -> Either ParseError Osu
+parseOsu = parse parserOsu ""
