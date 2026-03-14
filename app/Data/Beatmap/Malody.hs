@@ -149,7 +149,8 @@ instance FromJSON Malody where
 
 instance INoteCompatible Malody where
     getINoteColumns :: Malody -> [[INote]]
-    getINoteColumns Malody{bpmChanges, events} =
+    getINoteColumns Malody{bpmChanges = []} = error "BPM not specified."
+    getINoteColumns Malody{bpmChanges = bpmChanges@(_:bpmTail), events} =
         events
             & filter isNote
             & sortOn column
@@ -175,7 +176,7 @@ instance INoteCompatible Malody where
                 -- Accumulate the intervals
                 scanl1 (+) $
                     -- Put adjacent changes into pairs
-                    zipWith interval bpmChanges (tail bpmChanges)
+                    zipWith interval bpmChanges bpmTail
           where
             -- Calculate the interval (ms) between two BPM change points.
             interval (BpmChange t bpm) (BpmChange t' _) =
