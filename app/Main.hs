@@ -2,13 +2,8 @@ module Main where
 
 import Control.Monad (when)
 import Data.Beatmap.FxTap (FxTap, FxTapCompatible (toFxTap), toFxTap)
-import Data.Beatmap.FxTap.Checker (
-    Explain (..),
-    FxTapMessage (..),
-    checkFxTap,
-    isError,
- )
-import Data.Beatmap.FxTap.Put (putFxTapBinary, putFxTapCHeader)
+import Data.Beatmap.FxTap.Checker (Explain (..), FxTapMessage (..), checkFxTap, isError)
+import Data.Beatmap.FxTap.Put (putFxTapBinary, putFxTapCHeader, putFxTapCSource)
 import Data.Beatmap.Malody (parseMalody)
 import Data.Beatmap.Osu.Parser (parseOsu)
 import Data.Binary.Put (runPut)
@@ -19,7 +14,7 @@ import Data.Maybe (fromMaybe)
 import FxTapAdapter (FxTapArgs (..), OutputType (..), getFxtaArgs)
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
 import System.Exit (exitFailure, exitSuccess)
-import System.FilePath (dropExtension, takeExtension)
+import System.FilePath (dropExtension, takeExtension, takeBaseName)
 
 main :: IO ()
 main = do
@@ -74,14 +69,18 @@ printFxTapMessages messages = do
         putStrLn (explain message)
 
 writeOutput :: FilePath -> Maybe FilePath -> OutputType -> FxTap -> IO ()
-writeOutput inputPath outputPath outputType beatmap =
-    BL.writeFile outputPath' . runPut $
-        case outputType of
-            OutputBinary byteOrder ->
-                putFxTapBinary byteOrder beatmap
-            OutputC symbolName ->
-                putFxTapCHeader symbolName beatmap
+writeOutput inputPath maybeOutputPath outputType beatmap =
+    case outputType of
+        OutputBinary byteOrder ->
+            BL.writeFile fxtPath (runPut (putFxTapBinary byteOrder beatmap))
+          where
+            fxtPath = outputPathNoExtension ++ ".fxt"
+        OutputC symbolName -> do
+            BL.writeFile headerPath (runPut (putFxTapCHeader symbolName beatmap))
+            BL.writeFile sourcePath (runPut (putFxTapCSource includeName symbolName beatmap))
+          where
+            headerPath = outputPathNoExtension ++ ".h"
+            includeName = takeBaseName outputPathNoExtension
+            sourcePath = outputPathNoExtension ++ ".c"
   where
-    extension = case outputType of OutputBinary{} -> ".fxt"; OutputC{} -> ".fxt.h"
-    defaultOutputPath = dropExtension inputPath
-    outputPath' = dropExtension (fromMaybe defaultOutputPath outputPath) ++ extension
+    outputPathNoExtension = dropExtension $ fromMaybe inputPath maybeOutputPath
