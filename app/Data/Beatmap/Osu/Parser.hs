@@ -432,7 +432,7 @@ pComboColour = do
 
 pColours :: Parser Colours
 pColours = do
-    pSectionTitle "Colours"
+    try $ pSectionTitle "Colours"
     Colours
         <$> (M.fromList <$> some pComboColour)
         <*> pKv' "SliderTrackOverride" (Just <$> pColour) Nothing
@@ -448,7 +448,7 @@ parserOsu = do
         <*> pDifficulty
         <*> pEvents
         <*> pTimingPoints
-        <*> try (optional pColours)
+        <*> optional pColours
         <*> pHitObjects
         <* eof
 
