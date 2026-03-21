@@ -11,10 +11,12 @@ import Data.ByteString.Lazy qualified as BL
 import Data.Char (toLower)
 import Data.Foldable (for_)
 import Data.Maybe (fromMaybe)
+import Data.Version (showVersion)
 import FxTapAdapter (FxTapArgs (..), OutputType (..), getFxtaArgs)
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
+import Paths_fxTap_Adapter (version)
 import System.Exit (exitFailure, exitSuccess)
-import System.FilePath (dropExtension, takeExtension, takeBaseName)
+import System.FilePath (dropExtension, takeBaseName, takeExtension)
 
 main :: IO ()
 main = do
@@ -22,7 +24,7 @@ main = do
     args <- getFxtaArgs
     case args of
         FxTapVersion -> do
-            putStrLn "1.0.1.1"
+            putStrLn (showVersion version)
             exitSuccess
         FxTapMain{outputType, inputPath, outputPath} -> do
             syntaxErrorOrBeatmap <- loadBeatmapFromPath inputPath
