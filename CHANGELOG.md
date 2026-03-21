@@ -1,5 +1,15 @@
 # Revision history for fxTap-Adapter
 
+## 1.0.2.0 -- 2026-03-21
+
+### Feature
+
+* Support exporting as C source and header.
+
+### Bugfix
+
+* `[Colour]` in osu! beatmap can't be ignored correctly.
+
 ## 1.0.1.1 -- 2026-03-11
 
 ### Feature
