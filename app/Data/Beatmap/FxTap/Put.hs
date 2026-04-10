@@ -20,7 +20,7 @@ import GHC.ByteOrder (ByteOrder (..))
 
 putFxTapBinary :: ByteOrder -> FxTap -> Put
 putFxTapBinary bo FxTap{..} = do
-    putStringUtf8 "FXT@2601"
+    putStringUtf8 "FXT@2602"
 
     putDouble overallDifficulty
 
@@ -31,6 +31,10 @@ putFxTapBinary bo FxTap{..} = do
     let artist' = take 255 artist
     putInt8 (fromIntegral (length artist'))
     putStringUtf8 artist'
+
+    let version' = take 255 version
+    putInt8 (fromIntegral (length version'))
+    putStringUtf8 version'
 
     putInt8 (fromIntegral (length noteColumns))
     for_ noteColumns $ \notesColumn ->

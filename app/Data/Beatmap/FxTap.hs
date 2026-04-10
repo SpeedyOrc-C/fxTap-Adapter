@@ -6,6 +6,7 @@ import Data.Beatmap.IR
 class (INoteCompatible beatmap) => FxTapCompatible beatmap where
     getTitle :: beatmap -> String
     getArtist :: beatmap -> String
+    getVersion :: beatmap -> String
     getOverallDifficulty :: beatmap -> Double
 
     toFxTap :: beatmap -> FxTap
@@ -13,6 +14,7 @@ class (INoteCompatible beatmap) => FxTapCompatible beatmap where
         FxTap
             { title = getTitle beatmap
             , artist = getArtist beatmap
+            , version = getVersion beatmap
             , overallDifficulty = getOverallDifficulty beatmap
             , noteColumns =
                 (\x -> evalState (traverse accumulateAbsoluteNotes x) 0)
@@ -22,6 +24,7 @@ class (INoteCompatible beatmap) => FxTapCompatible beatmap where
 data FxTap = FxTap
     { title :: String
     , artist :: String
+    , version :: String
     , overallDifficulty :: Double
     , -- 1st dimension : columns
       -- 2nd dimension : notes

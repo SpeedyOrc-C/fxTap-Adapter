@@ -9,6 +9,7 @@ exampleHold =
    FxTap
       { title = "Example (hold)"
       , artist = "fxTap Adapter"
+      , version = "normal"
       , overallDifficulty = 3
       , noteColumns =
          [ Hold 0 1000

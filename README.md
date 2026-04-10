@@ -45,17 +45,20 @@ Here are all the exceptions so far:
 
 ## Binary Format
 
+**Warning**: Numbers' endianness can vary depending on the platform.
+
 ```ebnf
 beatmap ::=
    header,
    overall difficulty,
    song title,
    song artist,
+   beatmap version,
    column count,
    columns sizes,
    notes;
 
-header ::= "FXT@2601";
+header ::= "FXT@2602";
 
 (* Number of notes in columns 1 to 8 *)
 column count ::= 1 byte;
@@ -66,6 +69,7 @@ overall difficulty ::= IEEE double;
 
 song title ::= string;
 song artist ::= string;
+beatmap version ::= string;
 
 string ::= string size, string content;
 string content = {1 byte};

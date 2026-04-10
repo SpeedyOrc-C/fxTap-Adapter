@@ -247,5 +247,8 @@ instance FxTapCompatible Osu where
     getArtist :: Osu -> String
     getArtist = artist . metadata
 
+    getVersion :: Osu -> String
+    getVersion = version . metadata
+
     getOverallDifficulty :: Osu -> Double
     getOverallDifficulty = overallDifficulty . difficulty

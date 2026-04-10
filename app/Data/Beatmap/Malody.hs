@@ -219,5 +219,8 @@ instance FxTapCompatible Malody where
     getArtist :: Malody -> String
     getArtist = artist . song . metadata
 
+    getVersion :: Malody -> String
+    getVersion = version . metadata
+
     getOverallDifficulty :: Malody -> Double
     getOverallDifficulty = const 6

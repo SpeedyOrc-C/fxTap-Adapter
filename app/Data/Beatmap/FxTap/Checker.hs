@@ -8,6 +8,7 @@ import Data.Function ((&))
 data FxTapWarning
     = TitleTrimmed
     | ArtistTrimmed
+    | VersionTrimmed
     | OverlappedHold
         { overlappedColumnIndex :: Integer
         , overlappedHoldIndex :: Integer
@@ -42,6 +43,10 @@ titleChecker = FxTapChecker $ \FxTap{title} ->
 artistChecker :: FxTapChecker
 artistChecker = FxTapChecker $ \FxTap{artist} ->
     [FxTapWarning ArtistTrimmed | length artist > 255]
+
+versionChecker :: FxTapChecker
+versionChecker = FxTapChecker $ \FxTap{version} ->
+    [FxTapWarning VersionTrimmed | length version > 255]
 
 columnOverlapChecker :: [(Integer, Note)] -> [(Integer, Integer)]
 columnOverlapChecker [] = []
@@ -101,6 +106,7 @@ fxTapChecker =
     mconcat
         [ titleChecker
         , artistChecker
+        , versionChecker
         , overlapChecker
         , intervalOverflowChecker
         , durationOverflowChecker
@@ -122,9 +128,11 @@ class Explain a where
 instance Explain FxTapWarning where
     explain :: FxTapWarning -> String
     explain TitleTrimmed =
-        "Title is too long to fit in, only 31 characters are kept."
+        "Title is too long to fit in, only 255 characters are kept."
     explain ArtistTrimmed =
-        "Artist is too long to fit in, only 31 characters are kept."
+        "Artist is too long to fit in, only 255 characters are kept."
+    explain VersionTrimmed =
+        "Version is too long to fit in, only 255 characters are kept."
     explain OverlappedHold{..} =
         "The #"
             ++ show (overlappedHoldIndex + 1)
