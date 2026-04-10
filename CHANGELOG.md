@@ -1,5 +1,11 @@
 # Revision history for fxTap-Adapter
 
+## 1.1.0.0 -- 2026-04-06
+
+### Feature
+
+* Redesigned file format. Beatmap version is now included.
+
 ## 1.0.2.0 -- 2026-03-21
 
 ### Feature
