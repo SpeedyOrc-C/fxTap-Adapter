@@ -1,6 +1,7 @@
 # fxTap Adapter
 
-This is a [osu!](https://osu.ppy.sh) and [Malody](https://malody.mugzone.net) beatmap parser with a converter to fxTap format.
+This is an [osu!](https://osu.ppy.sh) and [Malody](https://malody.mugzone.net)
+beatmap parser with a converter to [fxTap](https://github.com/SpeedyOrc-C/fxTap)’s format.
 
 ## Usage
 
@@ -28,7 +29,7 @@ And the executable named `fxta` will be installed to Cabal's folder.
 
 ### Run
 
-Convert `a.osu` to `b.fxt` in binary for CASIO calculator (big endian):
+Convert `a.osu` to `b.fxt` in binary for Casio calculator (big endian):
 
 ```sh
 fxta -b casio -i a.osu -o b.fxt
